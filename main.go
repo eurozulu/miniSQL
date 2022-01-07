@@ -9,6 +9,8 @@ import (
 	"tinydb/db"
 )
 
+var tdb *db.TinyDB
+
 func main() {
 	var schemaName string
 	flag.StringVar(&schemaName, "schema", "", "filepath to a schema")

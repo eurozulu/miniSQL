@@ -12,8 +12,6 @@ import (
 	"tinydb/queryparse"
 )
 
-var tdb *db.TinyDB
-
 func readCommands(ctx context.Context, out io.Writer, done chan bool) {
 	defer close(done)
 
@@ -37,7 +35,6 @@ func readCommands(ctx context.Context, out io.Writer, done chan bool) {
 		case "DUMP":
 			err = dumpCommand(strings.TrimSpace(args[1]), out)
 		}
-
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\n%s\n", err)
 		}
