@@ -4,7 +4,7 @@ import "testing"
 
 func TestNewTable(t *testing.T) {
 	cols := map[string]bool{"one": true, "two": true, "three": true}
-	tb := NewTable(cols)
+	tb := newTable(cols)
 	if tb == nil {
 		t.Fatalf("Newtable returned nil")
 	}
@@ -12,7 +12,7 @@ func TestNewTable(t *testing.T) {
 
 func TestTable_ColumnNames(t *testing.T) {
 	cols := map[string]bool{"one": true, "two": true, "three": true}
-	tb := NewTable(cols)
+	tb := newTable(cols)
 
 	tns := tb.ColumnNames()
 	if len(tns) != len(cols) {
@@ -27,7 +27,7 @@ func TestTable_ColumnNames(t *testing.T) {
 
 func TestTable_AlterColumns(t *testing.T) {
 	cols := map[string]bool{"one": true, "two": true, "three": true}
-	tb := NewTable(cols)
+	tb := newTable(cols)
 	cns := tb.ColumnNames()
 	if len(cns) != len(cols) {
 		t.Fatalf("Expected %d columns, found %d", len(cols), len(cns))
@@ -50,7 +50,7 @@ func TestTable_NextID(t *testing.T) {
 	cols := map[string]bool{"one": true, "two": true, "three": true}
 	vals := []string{"1", "2", "3"}
 
-	tb := NewTable(cols)
+	tb := newTable(cols)
 	k := tb.NextID()
 	if k != 0 {
 		t.Fatalf("Expected zero next id on empty table, found %d", k)

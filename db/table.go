@@ -128,7 +128,7 @@ func containsString(s string, ss []string) int {
 	return -1
 }
 
-func NewTable(columns map[string]bool) *table {
+func newTable(columns map[string]bool) *table {
 	t := &table{
 		keys:    keyColumn{},
 		columns: map[string]column{},

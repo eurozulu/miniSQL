@@ -55,10 +55,14 @@ func (qp QueryParser) parseInsert(q string) (db.Query, error) {
 		return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
 	}
 	tn := qs[0]
-	cmd := strings.SplitN(strings.TrimSpace(qs[1]), " ", 2)
-	switch strings.ToUpper(cmd[0]) {
-	case "VALUES":
-		vs, err := qp.parseValue(cmd[1])
+	q, cols, err := ParseList(qs[1])
+	if err != nil {
+		return nil, fmt.Errorf("invalid columns %s", err)
+	}
+
+	if strings.HasPrefix(strings.ToUpper(q), "VALUES") {
+		_, vals, err := ParseList(q[6:])
+		vs, err := valuesList(cols, vals)
 		if err != nil {
 			return nil, err
 		}
@@ -66,18 +70,19 @@ func (qp QueryParser) parseInsert(q string) (db.Query, error) {
 			TableName: tn,
 			Values:    vs,
 		}, nil
-	case "SELECT":
-		sq, err := qp.parseSelect(cmd[1])
+	}
+	if strings.HasPrefix(strings.ToUpper(q), "SELECT") {
+		sq, err := qp.parseSelect(strings.TrimSpace(q[6:]))
 		if err != nil {
 			return nil, err
 		}
-		return &db.InsertQuery{
-			TableName: tn,
-			Select:    sq,
+		return &db.InsertSelectQuery{
+			TableName:   tn,
+			SelectQuery: sq,
 		}, nil
-	default:
-		return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
+
 	}
+	return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
 }
 
 func (qp QueryParser) parseDelete(q string) (*db.DeleteQuery, error) {
@@ -119,23 +124,36 @@ func (qp QueryParser) parseWhere(q string) (db.Where, error) {
 	return wh, nil
 }
 
-func (qp QueryParser) parseValue(q string) (db.Values, error) {
-	q = strings.TrimLeft(q, "(")
-	q = strings.TrimRight(q, ")")
-	q = strings.TrimSpace(q)
-	qs := strings.Split(q, ",")
-	v := db.Values{}
-	for _, qv := range qs {
-		qvs := strings.SplitN(qv, "=", 2)
-		if len(qvs) != 2 {
-			return nil, fmt.Errorf("invalud value, no equals found %s", qv)
-		}
-		val := strings.TrimSpace(qvs[1])
-		var vp *string
-		if val != "NULL" {
-			vp = &val
-		}
-		v[strings.TrimSpace(qvs[0])] = vp
+func valuesList(keys []string, vals []string) (db.Values, error) {
+	if len(keys) != len(vals) {
+		return nil, fmt.Errorf("columns / values count mismatch")
 	}
-	return v, nil
+	vm := db.Values{}
+	for i, k := range keys {
+		vs := strings.Trim(vals[i], "'")
+		vm[k] = &vs
+	}
+	return vm, nil
+}
+
+func ParseList(q string) (string, []string, error) {
+	if !strings.HasPrefix(q, "(") {
+		return "", nil, fmt.Errorf("expected '(' not found")
+	}
+	i := strings.Index(q, ")")
+	if i < 0 {
+		return "", nil, fmt.Errorf("expected ')' not found")
+	}
+	ls := strings.TrimRight(q[:i], ")")
+	ls = strings.TrimLeft(ls, "(")
+	if i+1 < len(q) {
+		q = strings.TrimSpace(q[i+1:])
+	} else {
+		q = ""
+	}
+	cols := strings.Split(ls, ",")
+	for i, c := range cols {
+		cols[i] = strings.TrimSpace(c)
+	}
+	return q, cols, nil
 }
