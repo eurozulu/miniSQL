@@ -35,8 +35,7 @@ func (tb table) ColumnNames() []string {
 }
 
 func (tb table) ContainsID(k Key) bool {
-	_, ok := tb.keys[k]
-	return ok
+	return tb.keys[k]
 }
 
 func (tb table) NextID() Key {
@@ -165,13 +164,6 @@ func (tb *table) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
-func valueFromList(cols []string, vals []*string) Values {
-	v := Values{}
-	for i, c := range cols {
-		v[c] = vals[i]
-	}
-	return v
-}
 func containsString(s string, ss []string) int {
 	for i, sz := range ss {
 		if sz == s {
