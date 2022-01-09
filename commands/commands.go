@@ -1,43 +1,93 @@
-package main
+package commands
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"sort"
 	"strings"
-	"tinydb/db"
-	"tinydb/queryparse"
+
+	"eurozulu/tinydb/db"
+	"eurozulu/tinydb/queryparse"
+	"github.com/eurozulu/commandline"
 )
 
-func readCommands(ctx context.Context, out io.Writer, done chan bool) {
+var Database *db.TinyDB
+
+const historyLocation = "$HOME/.tinydb_history"
+
+func ReadCommands(ctx context.Context, out io.Writer, done chan bool) {
 	defer close(done)
 
-	scn := bufio.NewScanner(os.Stdin)
+	cli := commandline.NewCommandLine()
+	if err := cli.LoadHistory(historyLocation); err != nil {
+		log.Println(err)
+	} else {
+		defer cli.SaveHistory(historyLocation)
+	}
+
 	out.Write([]byte(">"))
-	for scn.Scan() {
-		cmd := strings.TrimSpace(scn.Text())
-		args := strings.SplitN(cmd, " ", 2)
-		var err error
-		switch args[0] {
+	for {
+		ln, err := cli.ReadCommand()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Println()
+
+		args := strings.SplitN(strings.TrimSpace(ln), " ", 2)
+		switch strings.ToUpper(args[0]) {
+		case "":
+			err = nil //nop
 		case "EXIT", "X", "QUIT":
 			return
 		case "SELECT", "INSERT", "DELETE", "UPDATE":
-			err = queryCommand(ctx, cmd, out)
+			err = queryCommand(ctx, strings.TrimSpace(ln), out)
 		case "CREATE":
-			err = createCommand(strings.TrimSpace(args[1]), out)
+			if len(args) > 1 {
+				err = createCommand(strings.TrimSpace(args[1]), out)
+			} else {
+				err = fmt.Errorf("no create parameter")
+			}
+
 		case "DROP":
-			err = dropCommand(strings.TrimSpace(args[1]), out)
+			if len(args) > 1 {
+				err = dropCommand(strings.TrimSpace(args[1]), out)
+			} else {
+				err = fmt.Errorf("no drop parameter")
+			}
+
 		case "RESTORE":
-			err = restoreCommand(strings.TrimSpace(args[1]), out)
+			if len(args) > 1 {
+				err = RestoreCommand(strings.TrimSpace(args[1]), out)
+			} else {
+				err = fmt.Errorf("no RESTORE parameter")
+			}
+
 		case "DUMP":
-			err = dumpCommand(strings.TrimSpace(args[1]), out)
+			if len(args) > 1 {
+				err = DumpCommand(strings.TrimSpace(args[1]), out)
+			} else {
+				err = fmt.Errorf("no DUMP parameter")
+			}
+
+		case "DESC", "DESCRIBE":
+			if len(args) > 1 {
+				err = DescribeCommand(strings.TrimSpace(args[1]), out)
+			} else {
+				err = fmt.Errorf("no DESCRIBE parameter")
+			}
+
+		case "TABLES":
+			err = TablesCommand("", out)
+		default:
+			err = fmt.Errorf("%q is an unknown command", args[0])
 		}
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "\n%s\n", err)
+			fmt.Fprintf(os.Stderr, "%s\n", err)
 		}
+
 		out.Write([]byte(">"))
 	}
 }
@@ -48,7 +98,7 @@ func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	rCh, err := q.Execute(ctx, tdb)
+	rCh, err := q.Execute(ctx, Database)
 	if err != nil {
 		return err
 	}
@@ -93,17 +143,32 @@ func dropCommand(cmd string, out io.Writer) error {
 	}
 
 }
-func dumpCommand(cmd string, out io.Writer) error {
+func DumpCommand(cmd string, out io.Writer) error {
 	if cmd == "" {
 		return fmt.Errorf("must specifiy the file path to write to")
 	}
-	return db.Dump(cmd, tdb)
+	return db.Dump(cmd, Database)
 }
-func restoreCommand(cmd string, out io.Writer) error {
+func RestoreCommand(cmd string, out io.Writer) error {
 	if cmd == "" {
 		return fmt.Errorf("must specifiy the file path to restore from")
 	}
-	return db.Restore(cmd, tdb)
+	return db.Restore(cmd, Database)
+}
+
+func DescribeCommand(cmd string, out io.Writer) error {
+	desc, err := Database.Describe(cmd)
+	if err != nil {
+		return err
+	}
+	desc = append([]string{fmt.Sprintf("Table: %s", cmd)}, desc...)
+	_, err = fmt.Fprintln(out, strings.Join(desc, "\n"))
+	return err
+}
+
+func TablesCommand(cmd string, out io.Writer) error {
+	_, err := fmt.Fprintln(out, strings.Join(Database.TableNames(), "\n"))
+	return err
 }
 
 func createTable(cmd string) error {
@@ -111,7 +176,7 @@ func createTable(cmd string) error {
 	if err != nil {
 		return err
 	}
-	tdb.AlterDatabase(sc)
+	Database.AlterDatabase(sc)
 	return nil
 }
 
@@ -125,14 +190,14 @@ func createColumn(cmd string) error {
 		tn = k
 		break
 	}
-	if !tdb.ContainsTable(tn) {
+	if !Database.ContainsTable(tn) {
 		return fmt.Errorf("%s is not a known table")
 	}
-	tdb.AlterDatabase(sc)
+	Database.AlterDatabase(sc)
 	return nil
 }
 func dropTable(cmd string) error {
-	tdb.AlterDatabase(db.Schema{cmd: nil})
+	Database.AlterDatabase(db.Schema{cmd: nil})
 	return nil
 }
 
@@ -146,13 +211,13 @@ func dropColumn(cmd string) error {
 		tn = k
 		break
 	}
-	if !tdb.ContainsTable(tn) {
+	if !Database.ContainsTable(tn) {
 		return fmt.Errorf("%s is not a known table")
 	}
 	for k := range sc[tn] {
 		sc[tn][k] = false
 	}
-	tdb.AlterDatabase(sc)
+	Database.AlterDatabase(sc)
 	return nil
 }
 
@@ -178,16 +243,16 @@ func orderedColumnValues(cols []string, out io.Writer, values []db.Values) {
 
 func createSchema(cmd string) (db.Schema, error) {
 	cmds := strings.SplitN(cmd, " ", 2)
-	var cols map[string]bool
-	if len(cmds) > 1 {
-		_, c, err := queryparse.ParseList(strings.TrimSpace(cmds[1]))
-		if err != nil {
-			return nil, err
-		}
-		cols = map[string]bool{}
-		for _, col := range c {
-			cols[col] = true
-		}
+	if len(cmds) < 2 {
+		return nil, fmt.Errorf("no columns stated for table %q", cmds[0])
+	}
+	_, c, err := queryparse.ParseList(strings.TrimSpace(cmds[1]))
+	if err != nil {
+		return nil, err
+	}
+	cols := map[string]bool{}
+	for _, col := range c {
+		cols[col] = true
 	}
 	return db.Schema{cmds[0]: cols}, nil
 }

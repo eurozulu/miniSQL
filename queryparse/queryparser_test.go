@@ -2,9 +2,9 @@ package queryparse
 
 import (
 	"context"
+	"eurozulu/tinydb/db"
 	"reflect"
 	"testing"
-	"tinydb/db"
 )
 
 var testSchema = db.Schema{

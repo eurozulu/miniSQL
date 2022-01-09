@@ -8,7 +8,7 @@ import (
 )
 
 func Dump(filename string, tdb *TinyDB) error {
-	f, err := os.Open(filename)
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
 	}

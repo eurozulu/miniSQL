@@ -19,7 +19,7 @@ type SelectQuery struct {
 func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, error) {
 	t, ok := db.tables[q.TableName]
 	if !ok {
-		return nil, fmt.Errorf("%s is not a known table", q.TableName)
+		return nil, fmt.Errorf("%q is not a known table", q.TableName)
 	}
 	cols, err := expandColumnNames(q.Columns, t.ColumnNames())
 	if err != nil {
@@ -57,15 +57,6 @@ func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, er
 		}
 	}(q, ch)
 	return ch, nil
-}
-
-type DeleteQuery struct {
-	TableName string
-	Where     Where
-}
-
-func (q DeleteQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, error) {
-	panic("not implemented")
 }
 
 // expandColumnNames expands the given list of column names and validates the given list as known names.

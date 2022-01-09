@@ -1,9 +1,9 @@
 package queryparse
 
 import (
+	"eurozulu/tinydb/db"
 	"fmt"
 	"strings"
-	"tinydb/db"
 )
 
 type QueryParser struct {
@@ -12,7 +12,7 @@ type QueryParser struct {
 func (qp QueryParser) Parse(q string) (db.Query, error) {
 	cmd := strings.SplitN(q, " ", 2)
 	if len(cmd) != 2 {
-		return nil, fmt.Errorf("invalid query")
+		return nil, fmt.Errorf("invalid query, missing column names")
 	}
 	switch strings.ToUpper(cmd[0]) {
 	case "SELECT":
@@ -32,17 +32,21 @@ func (qp QueryParser) parseSelect(q string) (*db.SelectQuery, error) {
 	if fi < 0 {
 		return nil, fmt.Errorf("missing FROM in query")
 	}
-	cols := strings.Split(q[:fi], ",")
+	cols := strings.Split(strings.TrimSpace(q[:fi]), ",")
 	q = strings.TrimSpace(q[fi+4:])
 	cmd := strings.SplitN(q, " ", 2)
-	w, err := qp.parseWhere(cmd[1])
-	if err != nil {
-		return nil, err
+	var where db.Where
+	if len(cmd) > 1 {
+		w, err := qp.parseWhere(cmd[1])
+		if err != nil {
+			return nil, err
+		}
+		where = w
 	}
 	return &db.SelectQuery{
 		TableName: cmd[0],
 		Columns:   cols,
-		Where:     w,
+		Where:     where,
 	}, nil
 }
 
@@ -61,7 +65,7 @@ func (qp QueryParser) parseInsert(q string) (db.Query, error) {
 	}
 
 	if strings.HasPrefix(strings.ToUpper(q), "VALUES") {
-		_, vals, err := ParseList(q[6:])
+		_, vals, err := ParseList(strings.TrimSpace(q[6:]))
 		vs, err := valuesList(cols, vals)
 		if err != nil {
 			return nil, err

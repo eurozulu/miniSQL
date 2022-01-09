@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
+	"eurozulu/tinydb/commands"
+	"eurozulu/tinydb/db"
 	"flag"
 	"log"
 	"os"
 	"os/signal"
-	"tinydb/db"
 )
-
-var tdb *db.TinyDB
 
 func main() {
 	var schemaName string
@@ -24,11 +23,11 @@ func main() {
 		}
 		scm = s
 	}
-	tdb = db.NewDatabase(scm)
+	commands.Database = db.NewDatabase(scm)
 
 	args := flag.Args()
 	if len(args) > 0 {
-		if err := db.Restore(args[0], tdb); err != nil {
+		if err := commands.RestoreCommand(args[0], os.Stdout); err != nil {
 			log.Fatalf("failed to restore database %s  %s", args[0], err)
 		}
 	}
@@ -40,13 +39,12 @@ func main() {
 	signal.Notify(sig, os.Interrupt, os.Kill)
 	done := make(chan bool)
 
-	go readCommands(ctx, os.Stdout, done)
+	go commands.ReadCommands(ctx, os.Stdout, done)
 	for {
 		select {
 		case <-sig:
 			return
 		case <-done:
-			log.Println("closed")
 			return
 		}
 	}

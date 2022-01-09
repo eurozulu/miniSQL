@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -23,6 +24,13 @@ func (pc column) Find(value string) []Key {
 func (pc column) Insert(id Key, value string) error {
 	if _, ok := pc[id]; ok {
 		return fmt.Errorf("id %d already exists", id)
+	}
+	if strings.HasPrefix(value, "'") || strings.HasPrefix(value, "\"") {
+		v, err := strconv.Unquote(value)
+		if err != nil {
+			return err
+		}
+		value = v
 	}
 	pc[id] = value
 	return nil
