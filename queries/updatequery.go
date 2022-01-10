@@ -56,6 +56,10 @@ func (q UpdateQuery) updateRow(k tinydb.Key, t tinydb.Table) Result {
 	return NewResult(q.TableName, v)
 }
 
+// NewUpdateQuery creates a new update query from the given string
+// Query should be a valid update without the preceeding UPDATE.
+// i.e it should begin with the table name.
+// e.g. "mytable SET col1=bla, col3=haha WHERE col2=hoho"
 func NewUpdateQuery(q string) (*UpdateQuery, error) {
 	si := strings.Index(strings.ToUpper(q), "SET")
 	if si < 2 {

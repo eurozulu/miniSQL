@@ -36,6 +36,10 @@ func (q DeleteQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 	return ch, nil
 }
 
+// NewDeleteQuery creates a new delete query from the given string
+// Query should be a valid delete without the preceeding DELETE.
+// i.e it should begin with the keyword FROM.
+// e.g. "FROM mytable WHERE _id=2"
 func NewDeleteQuery(q string) (*DeleteQuery, error) {
 	if !strings.HasPrefix(strings.ToUpper(q), "FROM") {
 		return nil, fmt.Errorf("missing FROM in query")

@@ -77,6 +77,10 @@ func expandColumnNames(t tinydb.Table, columns []string) ([]string, error) {
 	return cols, nil
 }
 
+// NewSelectQuery creates a SelectQuery from the given string.
+// String should contain a valid SELECT query, without the preceeding SELECT statement.
+// i.e. it should begin with a comma delimited list of column names.
+// e.g. "col1, col2, col3 FROM mytable WHERE col3=NULL"
 func NewSelectQuery(query string) (*SelectQuery, error) {
 	fi := strings.Index(strings.ToUpper(query), "FROM")
 	if fi < 0 {

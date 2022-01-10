@@ -62,6 +62,10 @@ func valuesList(keys []string, vals []string) (tinydb.Values, error) {
 	return vm, nil
 }
 
+// NewInsertQuery creates a new insert query from the given string
+// Query should be a valid insert without the preceeding INSERT.
+// i.e it should begin with the INTO keyword.
+// e.g. "INTO mytable (col1, col2, col3) VALUES ("one", "two", "three") "
 func NewInsertQuery(q string) (*InsertQuery, error) {
 	if !strings.HasPrefix(strings.ToUpper(q), "INTO") {
 		return nil, fmt.Errorf("missing INTO in query")
