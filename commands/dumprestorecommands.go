@@ -6,6 +6,10 @@ import (
 	"io"
 )
 
+var dumpHelp = "Dump and restore the whole database with DUMP and RESTORE\n" +
+	"\tDUMP <filename to write to>\n" +
+	"\tRESTORE <filename to read from\n"
+
 func DumpCommand(cmd string, out io.Writer) error {
 	if cmd == "" {
 		return fmt.Errorf("must specifiy the file path to write to")

@@ -10,6 +10,12 @@ import (
 	"strings"
 )
 
+var queryHelp = "Query commands: SELECT, INSERT, UPDATE and DELETE are supported.\n" +
+	"\tSELECT <table> FROM <column>[,<column>...] [WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n" +
+	"\tINSERT INTO <table> (<column> [,<column>...]) VALUES (<value> [,<value>...])\n" +
+	"\tUPDATE <table> SET <column>=<value>|NULL [,<column>=<value>|NULL...][ WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n" +
+	"\tDELETE FROM <table> [ WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n"
+
 func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
 	qp := &queryparse.QueryParser{}
 	q, err := qp.Parse(cmd)

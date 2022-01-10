@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+var metadataHelp = "Metadata about the database, DESCRIBE (DESC) and TABLES\n" +
+	"\tDESC <table>  describes the columns in that table\n" +
+	"\tTABLES    Lists all the table names in the database\n"
+
 func DescribeCommand(cmd string, out io.Writer) error {
 	desc, err := Database.Describe(cmd)
 	if err != nil {

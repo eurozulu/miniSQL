@@ -92,11 +92,8 @@ func parseCommand(ctx context.Context, out io.Writer, args ...string) error {
 		}
 
 	case "DROP":
-		if len(args) > 1 {
-			err = dropCommand(strings.TrimSpace(args[1]), out)
-		} else {
-			err = fmt.Errorf("no drop parameter")
-		}
+		err = dropCommand(strings.Join(args[1:], " "), out)
+
 	case "RESTORE":
 		if len(args) > 1 {
 			err = RestoreCommand(strings.TrimSpace(args[1]), out)
@@ -120,6 +117,9 @@ func parseCommand(ctx context.Context, out io.Writer, args ...string) error {
 
 	case "TABLES":
 		err = TablesCommand("", out)
+
+	case "HELP":
+		err = HelpCommand(strings.Join(args, " "), out)
 	default:
 		err = fmt.Errorf("%q is an unknown command", args[0])
 	}
@@ -133,4 +133,12 @@ func stdInSize() int64 {
 		return 0
 	}
 	return fi.Size()
+}
+
+func HelpCommand(cmd string, out io.Writer) error {
+	_, _ = fmt.Fprintln(out, queryHelp)
+	_, _ = fmt.Fprintln(out, structueHelp)
+	_, _ = fmt.Fprintln(out, metadataHelp)
+	_, _ = fmt.Fprintln(out, dumpHelp)
+	return nil
 }

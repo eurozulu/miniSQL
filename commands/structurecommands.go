@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+var structueHelp = "Supports CREATE and DROP to structure the database tables and columns\n" +
+	"\tCREATE TABLE | COLUMN <table> (<column> [,<column>...] )\n" +
+	"\t\te.g. CREATE TABLE mytable (col1, col2, col3)\n" +
+	"\tDROP TABLE | COLUMN <table> (<column> [,<column>...] )\n" +
+	"\t\te.g. DROP COLUMN mytable (col3)\n" +
+	"\t\t     DROP TABLE mytable\n"
+
 func createCommand(cmd string, out io.Writer) error {
 	cmds := strings.SplitN(cmd, " ", 2)
 	switch strings.ToUpper(cmds[0]) {
@@ -20,14 +27,22 @@ func createCommand(cmd string, out io.Writer) error {
 	}
 }
 func dropCommand(cmd string, out io.Writer) error {
-	cmds := strings.SplitN(cmd, " ", 2)
-	switch strings.ToUpper(cmds[0]) {
+	cmds := strings.SplitN(strings.TrimSpace(cmd), " ", 2)
+	dt := strings.TrimSpace(strings.ToUpper(cmds[0]))
+	if dt == "" {
+		return fmt.Errorf("missing DROP type. must use TABLE or COLUMN")
+	}
+	if len(cmds) < 2 || cmds[1] == "" {
+		return fmt.Errorf("DROP %s missing table name", dt)
+	}
+	cmd = strings.TrimSpace(cmds[1])
+	switch dt {
 	case "TABLE":
-		return dropTable(cmds[1])
+		return dropTable(cmd, out)
 	case "COLUMN", "COL":
-		return dropColumn(cmds[1])
+		return dropColumn(cmd, out)
 	default:
-		return fmt.Errorf("unknown DROP type, must be TABLE or COLUMN")
+		return fmt.Errorf("DROP %s, is not a known drop type, must be TABLE or COLUMN", dt)
 	}
 
 }
@@ -57,12 +72,16 @@ func createColumn(cmd string) error {
 	Database.AlterDatabase(sc)
 	return nil
 }
-func dropTable(cmd string) error {
-	Database.AlterDatabase(db.Schema{cmd: nil})
-	return nil
+func dropTable(tableName string, out io.Writer) error {
+	if !Database.ContainsTable(tableName) {
+		return fmt.Errorf("%q is not a known table", tableName)
+	}
+	Database.AlterDatabase(db.Schema{tableName: nil})
+	_, err := fmt.Fprintf(out, "table %s dropped\n", tableName)
+	return err
 }
 
-func dropColumn(cmd string) error {
+func dropColumn(cmd string, out io.Writer) error {
 	sc, err := createSchema(cmd)
 	if err != nil {
 		return err
@@ -73,13 +92,27 @@ func dropColumn(cmd string) error {
 		break
 	}
 	if !Database.ContainsTable(tn) {
-		return fmt.Errorf("%s is not a known table")
+		return fmt.Errorf("%s is not a known table", tn)
 	}
+	cols, err := Database.Describe(tn)
+	if err != nil {
+		return err
+	}
+	var colNames []string
 	for k := range sc[tn] {
+		if containsString(k, cols) < 0 {
+			return fmt.Errorf("%q is not a known column in table %s", k, tn)
+		}
+		colNames = append(colNames, k)
 		sc[tn][k] = false
 	}
 	Database.AlterDatabase(sc)
-	return nil
+	var cs string
+	if len(colNames) != 1 {
+		cs = "s"
+	}
+	_, err = fmt.Fprintf(out, "dropped column%s %s, in table %s\n", cs, strings.Join(colNames, ", "), tn)
+	return err
 }
 
 func createSchema(cmd string) (db.Schema, error) {
@@ -96,4 +129,13 @@ func createSchema(cmd string) (db.Schema, error) {
 		cols[col] = true
 	}
 	return db.Schema{cmds[0]: cols}, nil
+}
+
+func containsString(s string, ss []string) int {
+	for i, sz := range ss {
+		if sz == s {
+			return i
+		}
+	}
+	return -1
 }
