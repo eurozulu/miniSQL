@@ -5,107 +5,47 @@ import (
 	"eurozulu/tinydb/stringutil"
 	"eurozulu/tinydb/tinydb"
 	"fmt"
-	"log"
-	"strconv"
 	"strings"
 )
 
-type InsertValuesQuery struct {
+type InsertQuery struct {
 	TableName string
+	Columns   []string
 	Values    tinydb.Values
 }
 
-func (q InsertValuesQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
-	iq := &InsertQuery{TableName: q.TableName, Values: make(chan tinydb.Values)}
-	rCh, err := iq.Execute(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	go func(iq *InsertQuery, v tinydb.Values) {
-		defer close(iq.Values)
-		select {
-		case <-ctx.Done():
-			return
-		case iq.Values <- v:
-		}
-	}(iq, q.Values)
-	return rCh, nil
-}
-
-type InsertSelectQuery struct {
-	TableName   string
-	SelectQuery *SelectQuery
-}
-
-func (q InsertSelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
-	src, err := q.SelectQuery.Execute(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
-	iq := &InsertQuery{TableName: q.TableName, Values: make(chan tinydb.Values)}
-	rCh, err := iq.Execute(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
-	go func(iq *InsertQuery, src <-chan Result) {
-		defer close(iq.Values)
-		select {
-		case <-ctx.Done():
-			return
-		case r, ok := <-src:
-			if !ok {
-				return
-			}
-			select {
-			case <-ctx.Done():
-				return
-			case iq.Values <- r.Values():
-			}
-		}
-	}(iq, src)
-	return rCh, nil
-}
-
-type InsertQuery struct {
-	TableName   string
-	Values      chan tinydb.Values
-	selectQuery string
-}
-
 func (q InsertQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
+	t, err := db.Table(q.TableName)
 	if !db.ContainsTable(q.TableName) {
-		return nil, fmt.Errorf("%s is not a known table", q.TableName)
+		return nil, err
 	}
-
+	cols, err := expandColumnNames(t, q.Columns)
+	if err != nil {
+		return nil, fmt.Errorf("%w in table %s", err, q.TableName)
+	}
+	q.Columns = cols
+	if len(q.Columns) != len(q.Values) {
+		return nil, fmt.Errorf("columns / values count mismatch")
+	}
 	ch := make(chan Result)
-	go func(q *InsertQuery, vOut chan<- Result) {
-		defer close(vOut)
+	go func(sq *InsertQuery, results chan<- Result) {
+		defer close(results)
 		t, _ := db.Table(q.TableName)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case v, ok := <-q.Values:
-				if !ok {
-					return
-				}
 
-				id, err := t.Insert(v)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				ids := strconv.Itoa(int(id))
-				v["_id"] = &ids
-				select {
-				case <-ctx.Done():
-					return
-				case vOut <- NewResult(q.TableName, v):
-				}
-			}
+		var r Result
+		if id, err := t.Insert(q.Values); err != nil {
+			e := fmt.Sprintf("failed to insert into table %q  %w", q.TableName, err)
+			r = NewResult(q.TableName, tinydb.Values{"ERROR": &e})
+		} else {
+			idp := fmt.Sprintf("%s:%d", q.TableName, id)
+			r = NewResult(q.TableName, tinydb.Values{"inserted": &idp})
 		}
+		select {
+		case <-ctx.Done():
+			return
+		case results <- r:
+		}
+
 	}(&q, ch)
 	return ch, nil
 }
@@ -122,41 +62,34 @@ func valuesList(keys []string, vals []string) (tinydb.Values, error) {
 	return vm, nil
 }
 
-func NewInsertQuery(q string) (Query, error) {
+func NewInsertQuery(q string) (*InsertQuery, error) {
 	if !strings.HasPrefix(strings.ToUpper(q), "INTO") {
 		return nil, fmt.Errorf("missing INTO in query")
 	}
-	qs := strings.SplitN(strings.TrimSpace(q[4:]), " ", 2)
-	if len(qs) < 2 {
-		return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
-	}
+	qs := strings.SplitN(strings.TrimSpace(q[len("INTO"):]), " ", 2)
 	tn := qs[0]
-	q, cols, err := stringutil.ParseList(qs[1])
+	if tn == "" {
+		return nil, fmt.Errorf("missing table name after INTO")
+	}
+	q = strings.Join(qs[1:], " ")
+	vi := strings.Index(strings.ToUpper(q), "VALUES")
+	if vi < 0 {
+		return nil, fmt.Errorf("invalid INSERT query.  No VALUES given")
+	}
+	_, cols, err := stringutil.ParseList(q[:vi])
 	if err != nil {
 		return nil, fmt.Errorf("invalid columns %s", err)
 	}
 
-	if strings.HasPrefix(strings.ToUpper(q), "VALUES") {
-		_, vals, err := stringutil.ParseList(strings.TrimSpace(q[6:]))
-		vs, err := valuesList(cols, vals)
-		if err != nil {
-			return nil, err
-		}
-		return &InsertValuesQuery{
-			TableName: tn,
-			Values:    vs,
-		}, nil
+	q = q[vi+len("VALUES"):]
+	_, vals, err := stringutil.ParseList(strings.TrimSpace(q))
+	vs, err := valuesList(cols, vals)
+	if err != nil {
+		return nil, err
 	}
-	if strings.HasPrefix(strings.ToUpper(q), "SELECT") {
-		sq, err := NewSelectQuery(strings.TrimSpace(q[6:]))
-		if err != nil {
-			return nil, err
-		}
-		return &InsertSelectQuery{
-			TableName:   tn,
-			SelectQuery: sq,
-		}, nil
-
-	}
-	return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
+	return &InsertQuery{
+		TableName: tn,
+		Columns:   cols,
+		Values:    vs,
+	}, nil
 }

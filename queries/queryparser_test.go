@@ -31,8 +31,8 @@ func TestQueryParser_ParseInsertValues(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to parse query %s", err)
 	}
-	if _, ok := q.(*InsertValuesQuery); !ok {
-		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*tinydb.InsertValuesQuery", reflect.TypeOf(q).Elem().Name())
+	if _, ok := q.(*InsertQuery); !ok {
+		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*InsertQuery", reflect.TypeOf(q).Elem().Name())
 	}
 	tdb := tinydb.NewDatabase(testSchema)
 	rCh, err := q.Execute(context.TODO(), tdb)
