@@ -42,7 +42,7 @@ func main() {
 	signal.Notify(sig, os.Interrupt, os.Kill)
 	done := make(chan bool)
 
-	go commands.ReadCommands(ctx, os.Stdout, done)
+	go commands.RunCommands(ctx, os.Stdout, done)
 	for {
 		select {
 		case <-sig:

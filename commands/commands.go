@@ -19,7 +19,10 @@ var Database *tinydb.TinyDB
 var Prompt = ">"
 var exitError = fmt.Errorf("exiting")
 
-func ReadCommands(ctx context.Context, out io.Writer, done chan bool) {
+// RunCommands reads the available commands from the std input and executes them.
+// If stdinput already contains data (pipped in from cmdline) that is executed first, then
+// the applications own command line is started.  Commands can then be entered into this command line until "EXIT" is entered
+func RunCommands(ctx context.Context, out io.Writer, done chan bool) {
 	defer close(done)
 	err := readStdInput(ctx, out)
 	if err != nil {
@@ -29,12 +32,12 @@ func ReadCommands(ctx context.Context, out io.Writer, done chan bool) {
 	err = readCommandLine(ctx, out)
 }
 
+// readStdInput flushes any available data in stdin and parse it as lines of commands
 func readStdInput(ctx context.Context, out io.Writer) error {
 	for stdInSize() > 0 {
 		s := bufio.NewScanner(os.Stdin)
 		for s.Scan() {
-			args := strings.Split(s.Text(), " ")
-			if err := parseCommand(ctx, out, args...); err != nil {
+			if err := parseCommand(ctx, out, strings.Split(s.Text(), " ")...); err != nil {
 				if err != nil {
 					return err
 				}
@@ -44,6 +47,7 @@ func readStdInput(ctx context.Context, out io.Writer) error {
 	return nil
 }
 
+// readCommandLine awaits user input and parses each line as a command
 func readCommandLine(ctx context.Context, out io.Writer) error {
 	cli := commandline.NewCommandLine()
 	if err := cli.LoadHistory(historyLocation); err != nil {

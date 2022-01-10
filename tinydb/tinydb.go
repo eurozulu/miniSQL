@@ -1,15 +1,10 @@
 package tinydb
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"os"
 )
 
 type Key int64
-type Schema map[string]map[string]bool
 
 type TinyDB struct {
 	tables map[string]Table
@@ -60,37 +55,11 @@ func (db *TinyDB) AlterDatabase(schema Schema) {
 			t.AlterColumns(cols)
 			continue
 		}
-		db.tables[tn] = newTable(cols)
-	}
-}
-func (s Schema) Save(filepath string) error {
-	f, err := os.Open(filepath)
-	if err != nil {
-		return err
-	}
-	defer func(f io.WriteCloser) {
-		if err := f.Close(); err != nil {
-			log.Println(err)
+		t = newTable(cols)
+		if len(t.ColumnNames()) > 0 {
+			db.tables[tn] = t
 		}
-	}(f)
-	return json.NewEncoder(f).Encode(&s)
-}
-
-func LoadSchema(filepath string) (Schema, error) {
-	f, err := os.Open(filepath)
-	if err != nil {
-		return nil, err
 	}
-	defer func(f io.ReadCloser) {
-		if err := f.Close(); err != nil {
-			log.Println(err)
-		}
-	}(f)
-	sc := Schema{}
-	if err = json.NewDecoder(f).Decode(&sc); err != nil {
-		return nil, err
-	}
-	return sc, nil
 }
 
 func NewDatabase(schema Schema) *TinyDB {
