@@ -11,7 +11,9 @@ import (
 )
 
 func main() {
+	var dbPath string
 	var schemaName string
+	flag.StringVar(&dbPath, "database", "", "filepath to a dump file of a database to load")
 	flag.StringVar(&schemaName, "schema", "", "filepath to a schema")
 	flag.Parse()
 
@@ -25,12 +27,13 @@ func main() {
 	}
 	commands.Database = db.NewDatabase(scm)
 
-	args := flag.Args()
-	if len(args) > 0 {
-		if err := commands.RestoreCommand(args[0], os.Stdout); err != nil {
-			log.Fatalf("failed to restore database %s  %s", args[0], err)
+	if dbPath != "" {
+		if err := commands.RestoreCommand(dbPath, os.Stdout); err != nil {
+			log.Fatalf("failed to restore database %s  %s", dbPath, err)
 		}
 	}
+
+	//args := flag.Args()
 
 	ctx, cnl := context.WithCancel(context.Background())
 	defer cnl()

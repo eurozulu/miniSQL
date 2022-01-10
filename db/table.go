@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-type Values map[string]*string
-
 type Table interface {
 	ColumnNames() []string
 	AlterColumns(cols map[string]bool)
@@ -23,16 +21,6 @@ type Table interface {
 type table struct {
 	keys    keyColumn
 	columns map[string]column
-}
-
-func (vs Values) ColumnNames() []string {
-	names := make([]string, len(vs))
-	var i int
-	for c := range vs {
-		names[i] = c
-		i++
-	}
-	return names
 }
 
 func (tb table) ColumnNames() []string {
@@ -112,7 +100,19 @@ func (tb table) Update(id Key, values Values) error {
 	if !tb.ContainsID(id) {
 		return fmt.Errorf("%d is not a known _id", id)
 	}
-	return tb.updateRow(id, values)
+
+	for k, v := range values {
+		c, ok := tb.columns[k]
+		if !ok {
+			return fmt.Errorf("%s column not known", k)
+		}
+		if v != nil {
+			c.Update(id, *v)
+		} else {
+			_ = c.Delete(id)
+		}
+	}
+	return nil
 }
 
 func (tb table) Delete(id ...Key) []Key {
@@ -131,28 +131,21 @@ func (tb table) Delete(id ...Key) []Key {
 
 func (tb table) Insert(values Values) (Key, error) {
 	id := tb.NextID()
-	if err := tb.updateRow(id, values); err != nil {
-		return -1, err
-	}
-	tb.keys[id] = true
-	return id, nil
-}
-
-func (tb table) updateRow(id Key, values Values) error {
 	for k, v := range values {
 		c, ok := tb.columns[k]
 		if !ok {
-			return fmt.Errorf("%s column not known", k)
+			return -1, fmt.Errorf("%s column not known", k)
 		}
 		if v != nil {
 			if err := c.Insert(id, *v); err != nil {
-				return err
+				return -1, err
 			}
 		} else {
 			_ = c.Delete(id)
 		}
 	}
-	return nil
+	tb.keys[id] = true
+	return id, nil
 }
 
 func (tb table) MarshalJSON() ([]byte, error) {
@@ -188,7 +181,7 @@ func containsString(s string, ss []string) int {
 	return -1
 }
 
-func newTable(columns map[string]bool) *table {
+func newTable(columns map[string]bool) Table {
 	t := &table{
 		keys:    keyColumn{},
 		columns: map[string]column{},

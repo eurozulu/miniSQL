@@ -19,6 +19,8 @@ func (qp QueryParser) Parse(q string) (db.Query, error) {
 		return qp.parseSelect(cmd[1])
 	case "INSERT":
 		return qp.parseInsert(cmd[1])
+	case "UPDATE":
+		return qp.parseUpdate(cmd[1])
 	case "DELETE":
 		return qp.parseDelete(cmd[1])
 
@@ -87,6 +89,47 @@ func (qp QueryParser) parseInsert(q string) (db.Query, error) {
 
 	}
 	return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
+}
+
+func (qp QueryParser) parseUpdate(q string) (*db.UpdateQuery, error) {
+	si := strings.Index(strings.ToUpper(q), "SET")
+	if si < 2 {
+		return nil, fmt.Errorf("missing SET command")
+	}
+	tn := strings.TrimSpace(q[:si])
+	if tn == "" {
+		return nil, fmt.Errorf("missing table name")
+	}
+
+	var where db.WhereClause
+	wi := strings.Index(strings.ToUpper(q), "WHERE")
+	if wi >= 0 {
+		w, err := qp.parseWhere(q[wi:])
+		if err != nil {
+			return nil, err
+		}
+		where = w
+		q = q[:wi]
+	}
+	vals := db.Values{}
+	sets := strings.Split(strings.TrimSpace(q[si+len("SET"):]), ",")
+	for _, s := range sets {
+		ss := strings.SplitN(s, "=", 2)
+		if len(ss) != 2 {
+			return nil, fmt.Errorf("missing value for %s", s)
+		}
+		var v *string
+		ss[1] = strings.TrimSpace(ss[1])
+		if ss[1] != db.NULL {
+			v = &ss[1]
+		}
+		vals[strings.TrimSpace(ss[0])] = v
+	}
+	return &db.UpdateQuery{
+		TableName: tn,
+		Values:    vals,
+		Where:     where,
+	}, nil
 }
 
 func (qp QueryParser) parseDelete(q string) (*db.DeleteQuery, error) {
