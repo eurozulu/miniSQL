@@ -27,8 +27,7 @@ var testSchema = tinydb.Schema{
 
 func TestQueryParser_ParseInsertValues(t *testing.T) {
 	query := "INSERT INTO t1 (c1-1, c1-2, c1-3) VALUES('one', 'two', 'three')"
-	qp := &QueryParser{}
-	q, err := qp.Parse(query)
+	q, err := ParseQuery(query)
 	if err != nil {
 		t.Fatalf("Failed to parse query %s", err)
 	}
@@ -62,8 +61,7 @@ func TestQueryParser_ParseInsertValues(t *testing.T) {
 
 func TestQueryParser_ParseSelect(t *testing.T) {
 	query := "SELECT * FROM t1"
-	qp := &QueryParser{}
-	q, err := qp.Parse(query)
+	q, err := ParseQuery(query)
 	if err != nil {
 		t.Fatalf("Failed to parse query %s", err)
 	}

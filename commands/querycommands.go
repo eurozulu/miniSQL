@@ -17,8 +17,7 @@ var queryHelp = "Query commands: SELECT, INSERT, UPDATE and DELETE are supported
 	"\tDELETE FROM <table> [ WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n"
 
 func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
-	qp := &queries.QueryParser{}
-	q, err := qp.Parse(cmd)
+	q, err := queries.ParseQuery(cmd)
 	if err != nil {
 		return err
 	}

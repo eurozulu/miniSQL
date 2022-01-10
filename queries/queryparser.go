@@ -5,10 +5,7 @@ import (
 	"strings"
 )
 
-type QueryParser struct {
-}
-
-func (qp QueryParser) Parse(q string) (Query, error) {
+func ParseQuery(q string) (Query, error) {
 	cmd := strings.SplitN(q, " ", 2)
 	if len(cmd) != 2 {
 		return nil, fmt.Errorf("invalid query, missing column names")
