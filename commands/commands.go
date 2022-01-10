@@ -19,6 +19,9 @@ var Database *tinydb.TinyDB
 var Prompt = ">"
 var exitError = fmt.Errorf("exiting")
 
+var exitHelp = "use EXIT to close the program\n" +
+	"\tAlso works with QUIT and X"
+
 // RunCommands reads the available commands from the std input and executes them.
 // If stdinput already contains data (pipped in from cmdline) that is executed first, then
 // the applications own command line is started.  Commands can then be entered into this command line until "EXIT" is entered
@@ -132,5 +135,6 @@ func HelpCommand(_ string, out io.Writer) error {
 	_, _ = fmt.Fprintln(out, structueHelp)
 	_, _ = fmt.Fprintln(out, metadataHelp)
 	_, _ = fmt.Fprintln(out, dumpHelp)
+	_, _ = fmt.Fprintln(out, exitHelp)
 	return nil
 }

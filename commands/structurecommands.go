@@ -12,8 +12,9 @@ var structueHelp = "Supports CREATE and DROP to structure the database tables an
 	"\tCREATE TABLE | COLUMN <table> (<column> [,<column>...] )\n" +
 	"\t\te.g. CREATE TABLE mytable (col1, col2, col3)\n" +
 	"\tDROP TABLE | COLUMN <table> (<column> [,<column>...] )\n" +
-	"\t\te.g. DROP COLUMN mytable (col3)\n" +
-	"\t\t     DROP TABLE mytable\n"
+	"\t\te.g. DROP COLUMN mytable (col1, col3)\n" +
+	"\t\t     DROP TABLE mytable\n" +
+	"\tDROP DATABASE\tDrops entire database (all tables)\n"
 
 func createCommand(cmd string, out io.Writer) error {
 	cmds := strings.SplitN(cmd, " ", 2)

@@ -10,8 +10,16 @@ import (
 	"strings"
 )
 
-var queryHelp = "Query commands: SELECT, INSERT, UPDATE and DELETE are supported.\n" +
-	"\tSELECT <table> FROM <column>[,<column>...] [WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n" +
+var queryHelp = "Query commands: SELECT, INSERT, UPDATE and DELETE.\n" +
+	"\tSELECT <table> [INTO <newtable>] FROM <column>[,<column>...] [WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n" +
+	"\t\t<table> must be an existing table\n" +
+	"\t\tINTO is optional, when given with a tablename, inserts the results into that table\n" +
+	"\t\t\tIf the INTO table exists, must have matching column names from the result.\n" +
+	"\t\t\tIf the INTO table doesn't exists, it is created with the columns of the result\n" +
+	"\t\tFROM must be followed by one or more, comma deliminated column names from the named table.\n" +
+	"\t\tWHERE optional where clause to filter result.  Current only supports AND and equality\n" +
+	"\t\t\te.g. WHERE col1=1 AND col2=thatthing\n" +
+	"\t\t\tcolumn can also be tested for NULL using the 'NULL' keyword\n" +
 	"\tINSERT INTO <table> (<column> [,<column>...]) VALUES (<value> [,<value>...])\n" +
 	"\tUPDATE <table> SET <column>=<value>|NULL [,<column>=<value>|NULL...][ WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n" +
 	"\tDELETE FROM <table> [ WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n"
