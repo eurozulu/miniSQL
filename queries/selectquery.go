@@ -66,15 +66,17 @@ func (q SelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 }
 
 func (q SelectQuery) insertInto(ctx context.Context, db *tinydb.TinyDB, ch <-chan Result) (chan Result, error) {
-	if !db.ContainsTable(q.Into) {
-		err := createNewTable(fmt.Sprintf("%s (%s)", q.Into, strings.Join(q.Columns, ",")), db)
+	t := q.Into
+	cols := removeColumn("_id", q.Columns)
+	if !db.ContainsTable(t) {
+		err := alterTable(t, cols, db)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	chOut := make(chan Result)
-	go func(q *SelectQuery, chIn <-chan Result, chOut chan<- Result) {
+	go func(table string, cols []string, chIn <-chan Result, chOut chan<- Result) {
 		defer close(chOut)
 		for {
 			select {
@@ -84,11 +86,10 @@ func (q SelectQuery) insertInto(ctx context.Context, db *tinydb.TinyDB, ch <-cha
 				if !ok {
 					return
 				}
-				delete(r.Values(), "_id")
-				ir, err := insertResult(ctx, db, q.Into, q.Columns, r.Values())
+				ir, err := insertResult(ctx, db, table, cols, r.Values())
 				if err != nil {
 					e := fmt.Sprintf("inserting values  %s", err)
-					ir = NewResult(q.Into, tinydb.Values{"ERROR": &e})
+					ir = NewResult(table, tinydb.Values{"ERROR": &e})
 				}
 				select {
 				case <-ctx.Done():
@@ -100,7 +101,7 @@ func (q SelectQuery) insertInto(ctx context.Context, db *tinydb.TinyDB, ch <-cha
 				}
 			}
 		}
-	}(&q, ch, chOut)
+	}(t, cols, ch, chOut)
 	return chOut, nil
 }
 
@@ -121,12 +122,14 @@ func insertResult(ctx context.Context, db *tinydb.TinyDB, table string, cols []s
 	return ir, nil
 }
 
-func createNewTable(q string, db *tinydb.TinyDB) error {
-	sc, err := tinydb.NewSchema(q)
-	if err != nil {
-		return err
+func alterTable(table string, columns []string, db *tinydb.TinyDB) error {
+	cols := map[string]bool{}
+	for _, c := range columns {
+		cols[c] = true
 	}
-	db.AlterDatabase(sc)
+	db.AlterDatabase(tinydb.Schema{
+		table: cols,
+	})
 	return nil
 }
 
@@ -149,6 +152,17 @@ func expandColumnNames(t tinydb.Table, columns []string) ([]string, error) {
 		}
 	}
 	return cols, nil
+}
+
+func removeColumn(c string, columns []string) []string {
+	i := stringutil.ContainsString(c, columns)
+	if i < 0 {
+		return columns
+	}
+	if i == len(columns)-1 {
+		return columns[:i]
+	}
+	return append(columns[:i], columns[i+1:]...)
 }
 
 // NewSelectQuery creates a SelectQuery from the given string.
