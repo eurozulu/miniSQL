@@ -1,8 +1,9 @@
 package commands
 
 import (
-	"eurozulu/tinydb/db"
 	"eurozulu/tinydb/queryparse"
+	"eurozulu/tinydb/stringutil"
+	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"io"
 	"strings"
@@ -22,9 +23,9 @@ func createCommand(cmd string, out io.Writer) error {
 	}
 	switch strings.ToUpper(cmds[0]) {
 	case "TABLE":
-		return createTable(cmds[1])
+		return createTable(strings.Join(cmds[1:], " "), out)
 	case "COLUMN", "COL":
-		return createColumn(strings.Join(cmds[1:], " "))
+		return createColumn(strings.Join(cmds[1:], " "), out)
 	default:
 		return fmt.Errorf("%s is an unknown CREATE type, must be TABLE or COLUMN", strings.ToUpper(cmds[0]))
 	}
@@ -50,16 +51,17 @@ func dropCommand(cmd string, out io.Writer) error {
 
 }
 
-func createTable(cmd string) error {
+func createTable(cmd string, out io.Writer) error {
 	sc, err := createSchema(cmd)
 	if err != nil {
 		return err
 	}
 	Database.AlterDatabase(sc)
-	return nil
+	_, err = fmt.Fprintf(out, "created table %v\n", sc)
+	return err
 }
 
-func createColumn(cmd string) error {
+func createColumn(cmd string, out io.Writer) error {
 	sc, err := createSchema(cmd)
 	if err != nil {
 		return err
@@ -73,13 +75,14 @@ func createColumn(cmd string) error {
 		return fmt.Errorf("%q is not a known table", tn)
 	}
 	Database.AlterDatabase(sc)
-	return nil
+	_, err = fmt.Fprintf(out, "created columns %v\n", sc)
+	return err
 }
 func dropTable(tableName string, out io.Writer) error {
 	if !Database.ContainsTable(tableName) {
 		return fmt.Errorf("%q is not a known table", tableName)
 	}
-	Database.AlterDatabase(db.Schema{tableName: nil})
+	Database.AlterDatabase(tinydb.Schema{tableName: nil})
 	_, err := fmt.Fprintf(out, "table %s dropped\n", tableName)
 	return err
 }
@@ -103,7 +106,7 @@ func dropColumn(cmd string, out io.Writer) error {
 	}
 	var colNames []string
 	for k := range sc[tn] {
-		if containsString(k, cols) < 0 {
+		if stringutil.ContainsString(k, cols) < 0 {
 			return fmt.Errorf("%q is not a known column in table %s", k, tn)
 		}
 		colNames = append(colNames, k)
@@ -118,7 +121,7 @@ func dropColumn(cmd string, out io.Writer) error {
 	return err
 }
 
-func createSchema(cmd string) (db.Schema, error) {
+func createSchema(cmd string) (tinydb.Schema, error) {
 	cmds := strings.SplitN(cmd, " ", 2)
 	if len(cmds) < 2 {
 		return nil, fmt.Errorf("no columns stated for table %q", cmds[0])
@@ -131,14 +134,5 @@ func createSchema(cmd string) (db.Schema, error) {
 	for _, col := range c {
 		cols[col] = true
 	}
-	return db.Schema{cmds[0]: cols}, nil
-}
-
-func containsString(s string, ss []string) int {
-	for i, sz := range ss {
-		if sz == s {
-			return i
-		}
-	}
-	return -1
+	return tinydb.Schema{cmds[0]: cols}, nil
 }

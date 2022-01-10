@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"eurozulu/tinydb/commands"
-	"eurozulu/tinydb/db"
+	"eurozulu/tinydb/tinydb"
 	"flag"
 	"log"
 	"os"
@@ -17,15 +17,15 @@ func main() {
 	flag.StringVar(&schemaName, "schema", "", "filepath to a schema")
 	flag.Parse()
 
-	var scm db.Schema
+	var scm tinydb.Schema
 	if schemaName != "" {
-		s, err := db.LoadSchema(schemaName)
+		s, err := tinydb.LoadSchema(schemaName)
 		if err != nil {
 			log.Fatalf("failed to open schema %s  %s", schemaName, err)
 		}
 		scm = s
 	}
-	commands.Database = db.NewDatabase(scm)
+	commands.Database = tinydb.NewDatabase(scm)
 
 	if dbPath != "" {
 		if err := commands.RestoreCommand(dbPath, os.Stdout); err != nil {

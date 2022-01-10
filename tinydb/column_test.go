@@ -1,4 +1,4 @@
-package db
+package tinydb
 
 import (
 	"fmt"
@@ -70,7 +70,7 @@ func TestColumn_Find(t *testing.T) {
 	col.Update(3, "test3")
 	keys := col.Find("test")
 	if len(keys) != 0 {
-		t.Fatalf("unexpected keys found from Find with non existing value")
+		t.Fatalf("unexpected Keys found from Find with non existing value")
 	}
 	for i := 1; i < 4; i++ {
 		f := fmt.Sprintf("test%d", i)

@@ -2,8 +2,9 @@ package commands
 
 import (
 	"context"
-	"eurozulu/tinydb/db"
+	"eurozulu/tinydb/queries"
 	"eurozulu/tinydb/queryparse"
+	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"io"
 	"sort"
@@ -26,7 +27,7 @@ func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	result := map[string][]db.Values{}
+	result := map[string][]tinydb.Values{}
 	for r := range rCh {
 		result[r.TableName()] = append(result[r.TableName()], r.Values())
 	}
@@ -50,7 +51,7 @@ func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
 	return nil
 }
 
-func orderedColumnNames(values db.Values) []string {
+func orderedColumnNames(values tinydb.Values) []string {
 	keys := make([]string, len(values))
 	var i int
 	for k := range values {
@@ -65,7 +66,7 @@ func orderedColumnNames(values db.Values) []string {
 	return keys
 }
 
-func orderedColumnValues(cols []string, out io.Writer, values []db.Values) {
+func orderedColumnValues(cols []string, out io.Writer, values []tinydb.Values) {
 	for _, v := range values {
 		for _, c := range cols {
 			fmt.Fprintf(out, "%s\t", valueString(v[c]))
@@ -78,5 +79,5 @@ func valueString(v *string) string {
 	if v != nil {
 		return *v
 	}
-	return db.NULL
+	return queries.NULL
 }

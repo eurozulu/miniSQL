@@ -1,7 +1,8 @@
-package db
+package queries
 
 import (
 	"context"
+	"eurozulu/tinydb/tinydb"
 	"log"
 	"strings"
 )
@@ -15,13 +16,13 @@ const keyBuffer = 255
 
 type WhereClause map[string]string
 
-func (w WhereClause) keys(ctx context.Context, t Table) <-chan Key {
-	ch := make(chan Key, keyBuffer)
-	go func(ch chan<- Key) {
+func (w WhereClause) Keys(ctx context.Context, t tinydb.Table) <-chan tinydb.Key {
+	ch := make(chan tinydb.Key, keyBuffer)
+	go func(ch chan<- tinydb.Key) {
 		defer close(ch)
 		last := t.NextID()
 		cols := w.ColumnNames()
-		for k := Key(0); k < last; k++ {
+		for k := tinydb.Key(0); k < last; k++ {
 			if !t.ContainsID(k) {
 				continue
 			}
@@ -55,7 +56,7 @@ func (w WhereClause) ColumnNames() []string {
 	return cols
 }
 
-func (w WhereClause) match(v Values) bool {
+func (w WhereClause) match(v tinydb.Values) bool {
 	for wk, wv := range w {
 		vv, ok := v[wk]
 		if !ok {

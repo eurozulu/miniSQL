@@ -1,14 +1,13 @@
-package db
+package queries
 
 import (
 	"context"
+	"eurozulu/tinydb/stringutil"
 	"fmt"
 	"log"
-)
 
-type Query interface {
-	Execute(ctx context.Context, db *TinyDB) (<-chan Result, error)
-}
+	"eurozulu/tinydb/tinydb"
+)
 
 type SelectQuery struct {
 	TableName string
@@ -16,10 +15,10 @@ type SelectQuery struct {
 	Where     WhereClause
 }
 
-func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, error) {
-	t, ok := db.tables[q.TableName]
-	if !ok {
-		return nil, fmt.Errorf("%q is not a known table", q.TableName)
+func (q SelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
+	t, err := db.Table(q.TableName)
+	if !db.ContainsTable(q.TableName) {
+		return nil, err
 	}
 	cols, err := expandColumnNames(t, q.Columns)
 	if err != nil {
@@ -30,8 +29,8 @@ func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, er
 	ch := make(chan Result)
 	go func(sq SelectQuery, results chan<- Result) {
 		defer close(results)
-		t := db.tables[sq.TableName]
-		keys := sq.Where.keys(ctx, t)
+		t, _ := db.Table(q.TableName)
+		keys := sq.Where.Keys(ctx, t)
 		for {
 			select {
 			case <-ctx.Done():
@@ -48,10 +47,7 @@ func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, er
 				select {
 				case <-ctx.Done():
 					return
-				case results <- &result{
-					tableName: q.TableName,
-					values:    v,
-				}:
+				case results <- NewResult(q.TableName, v):
 				}
 			}
 		}
@@ -61,7 +57,7 @@ func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, er
 
 // expandColumnNames expands the given list of column names and validates the given list as known names.
 // columns may contain "*" wild card to indicate all column names.
-func expandColumnNames(t Table, columns []string) ([]string, error) {
+func expandColumnNames(t tinydb.Table, columns []string) ([]string, error) {
 	tcols := t.ColumnNames()
 	if len(columns) == 0 {
 		return tcols, nil
@@ -71,7 +67,7 @@ func expandColumnNames(t Table, columns []string) ([]string, error) {
 		if c == "*" {
 			cols = append(cols, tcols...)
 		} else {
-			if containsString(c, tcols) < 0 {
+			if stringutil.ContainsString(c, tcols) < 0 {
 				return nil, fmt.Errorf("%s is an unknown column", c)
 			}
 			cols = append(cols, c)

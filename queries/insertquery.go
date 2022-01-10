@@ -1,7 +1,8 @@
-package db
+package queries
 
 import (
 	"context"
+	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,16 +10,16 @@ import (
 
 type InsertValuesQuery struct {
 	TableName string
-	Values    Values
+	Values    tinydb.Values
 }
 
-func (q InsertValuesQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, error) {
-	iq := &InsertQuery{TableName: q.TableName, Values: make(chan Values)}
+func (q InsertValuesQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
+	iq := &InsertQuery{TableName: q.TableName, Values: make(chan tinydb.Values)}
 	rCh, err := iq.Execute(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	go func(iq *InsertQuery, v Values) {
+	go func(iq *InsertQuery, v tinydb.Values) {
 		defer close(iq.Values)
 		select {
 		case <-ctx.Done():
@@ -34,13 +35,13 @@ type InsertSelectQuery struct {
 	SelectQuery *SelectQuery
 }
 
-func (q InsertSelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, error) {
+func (q InsertSelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
 	src, err := q.SelectQuery.Execute(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	iq := &InsertQuery{TableName: q.TableName, Values: make(chan Values)}
+	iq := &InsertQuery{TableName: q.TableName, Values: make(chan tinydb.Values)}
 	rCh, err := iq.Execute(ctx, db)
 	if err != nil {
 		return nil, err
@@ -67,20 +68,19 @@ func (q InsertSelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Resu
 
 type InsertQuery struct {
 	TableName   string
-	Values      chan Values
+	Values      chan tinydb.Values
 	selectQuery string
 }
 
-func (q InsertQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, error) {
-	_, ok := db.tables[q.TableName]
-	if !ok {
+func (q InsertQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
+	if !db.ContainsTable(q.TableName) {
 		return nil, fmt.Errorf("%s is not a known table", q.TableName)
 	}
 
 	ch := make(chan Result)
 	go func(q *InsertQuery, vOut chan<- Result) {
 		defer close(vOut)
-		t := db.tables[q.TableName]
+		t, _ := db.Table(q.TableName)
 		for {
 			select {
 			case <-ctx.Done():
@@ -100,10 +100,7 @@ func (q InsertQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, er
 				select {
 				case <-ctx.Done():
 					return
-				case vOut <- &result{
-					tableName: q.TableName,
-					values:    v,
-				}:
+				case vOut <- NewResult(q.TableName, v):
 				}
 			}
 		}

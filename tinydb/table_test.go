@@ -1,4 +1,4 @@
-package db
+package tinydb
 
 import "testing"
 
@@ -55,13 +55,23 @@ func TestTable_NextID(t *testing.T) {
 	if k != 0 {
 		t.Fatalf("Expected zero next id on empty table, found %d", k)
 	}
-	tb.Insert(Values{"one": &vals[0]})
+	_, err := tb.Insert(Values{"one": &vals[0]})
+	if err != nil {
+		t.Fatalf("Insert failed  %w", err)
+	}
 	k = tb.NextID()
 	if k != 1 {
 		t.Fatalf("Expected %d next id, found %d", 1, k)
 	}
-	tb.Insert(Values{"two": &vals[1]})
-	tb.Insert(Values{"three": &vals[2]})
+	_, err = tb.Insert(Values{"two": &vals[1]})
+	if err != nil {
+		t.Fatalf("Insert failed  %w", err)
+	}
+
+	_, err = tb.Insert(Values{"three": &vals[2]})
+	if err != nil {
+		t.Fatalf("Insert failed  %w", err)
+	}
 	k = tb.NextID()
 	if k != 3 {
 		t.Fatalf("Expected %d next id, found %d", 3, k)

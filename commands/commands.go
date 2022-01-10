@@ -9,13 +9,13 @@ import (
 	"os"
 	"strings"
 
-	"eurozulu/tinydb/db"
+	"eurozulu/tinydb/tinydb"
 	"github.com/eurozulu/commandline"
 )
 
 const historyLocation = "$HOME/.tinydb_history"
 
-var Database *db.TinyDB
+var Database *tinydb.TinyDB
 var Prompt = ">"
 var exitError = fmt.Errorf("exiting")
 
@@ -67,7 +67,9 @@ func readCommandLine(ctx context.Context, out io.Writer) error {
 			if err == exitError {
 				return err
 			}
-			fmt.Fprintf(os.Stderr, "%s\n", err)
+			if _, err = fmt.Fprintf(os.Stderr, "%s\n", err); err != nil {
+				return fmt.Errorf("Failed to write to stdout  %w", err)
+			}
 		}
 	}
 }
@@ -113,13 +115,15 @@ func parseCommand(ctx context.Context, out io.Writer, args ...string) error {
 func stdInSize() int64 {
 	fi, err := os.Stdin.Stat()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v", err)
+		if _, err := fmt.Fprintf(os.Stderr, "%v", err); err != nil {
+			log.Fatalln(err)
+		}
 		return 0
 	}
 	return fi.Size()
 }
 
-func HelpCommand(cmd string, out io.Writer) error {
+func HelpCommand(_ string, out io.Writer) error {
 	_, _ = fmt.Fprintln(out, queryHelp)
 	_, _ = fmt.Fprintln(out, structueHelp)
 	_, _ = fmt.Fprintln(out, metadataHelp)

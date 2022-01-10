@@ -1,4 +1,4 @@
-package db
+package tinydb
 
 import (
 	"encoding/json"
@@ -28,6 +28,14 @@ func (db TinyDB) TableNames() []string {
 func (db TinyDB) ContainsTable(tablename string) bool {
 	_, ok := db.tables[tablename]
 	return ok
+}
+
+func (db TinyDB) Table(tablename string) (Table, error) {
+	t, ok := db.tables[tablename]
+	if !ok {
+		return nil, fmt.Errorf("%q is not a known table", tablename)
+	}
+	return t, nil
 }
 
 func (db TinyDB) Describe(tablename string) ([]string, error) {

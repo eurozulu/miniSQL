@@ -1,7 +1,8 @@
 package queryparse
 
 import (
-	"eurozulu/tinydb/db"
+	"eurozulu/tinydb/queries"
+	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"strings"
 )
@@ -9,7 +10,7 @@ import (
 type QueryParser struct {
 }
 
-func (qp QueryParser) Parse(q string) (db.Query, error) {
+func (qp QueryParser) Parse(q string) (Query, error) {
 	cmd := strings.SplitN(q, " ", 2)
 	if len(cmd) != 2 {
 		return nil, fmt.Errorf("invalid query, missing column names")
@@ -29,7 +30,7 @@ func (qp QueryParser) Parse(q string) (db.Query, error) {
 	}
 }
 
-func (qp QueryParser) parseSelect(q string) (*db.SelectQuery, error) {
+func (qp QueryParser) parseSelect(q string) (*queries.SelectQuery, error) {
 	fi := strings.Index(strings.ToUpper(q), "FROM")
 	if fi < 0 {
 		return nil, fmt.Errorf("missing FROM in query")
@@ -37,7 +38,7 @@ func (qp QueryParser) parseSelect(q string) (*db.SelectQuery, error) {
 	cols := strings.Split(strings.TrimSpace(q[:fi]), ",")
 	q = strings.TrimSpace(q[fi+4:])
 	cmd := strings.SplitN(q, " ", 2)
-	var where db.WhereClause
+	var where queries.WhereClause
 	if len(cmd) > 1 {
 		w, err := qp.parseWhere(cmd[1])
 		if err != nil {
@@ -45,14 +46,14 @@ func (qp QueryParser) parseSelect(q string) (*db.SelectQuery, error) {
 		}
 		where = w
 	}
-	return &db.SelectQuery{
+	return &queries.SelectQuery{
 		TableName: cmd[0],
 		Columns:   cols,
 		Where:     where,
 	}, nil
 }
 
-func (qp QueryParser) parseInsert(q string) (db.Query, error) {
+func (qp QueryParser) parseInsert(q string) (Query, error) {
 	if !strings.HasPrefix(strings.ToUpper(q), "INTO") {
 		return nil, fmt.Errorf("missing INTO in query")
 	}
@@ -72,7 +73,7 @@ func (qp QueryParser) parseInsert(q string) (db.Query, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &db.InsertValuesQuery{
+		return &queries.InsertValuesQuery{
 			TableName: tn,
 			Values:    vs,
 		}, nil
@@ -82,7 +83,7 @@ func (qp QueryParser) parseInsert(q string) (db.Query, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &db.InsertSelectQuery{
+		return &queries.InsertSelectQuery{
 			TableName:   tn,
 			SelectQuery: sq,
 		}, nil
@@ -91,7 +92,7 @@ func (qp QueryParser) parseInsert(q string) (db.Query, error) {
 	return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
 }
 
-func (qp QueryParser) parseUpdate(q string) (*db.UpdateQuery, error) {
+func (qp QueryParser) parseUpdate(q string) (*queries.UpdateQuery, error) {
 	si := strings.Index(strings.ToUpper(q), "SET")
 	if si < 2 {
 		return nil, fmt.Errorf("missing SET command")
@@ -101,7 +102,7 @@ func (qp QueryParser) parseUpdate(q string) (*db.UpdateQuery, error) {
 		return nil, fmt.Errorf("missing table name")
 	}
 
-	var where db.WhereClause
+	var where queries.WhereClause
 	wi := strings.Index(strings.ToUpper(q), "WHERE")
 	if wi >= 0 {
 		w, err := qp.parseWhere(q[wi:])
@@ -111,7 +112,7 @@ func (qp QueryParser) parseUpdate(q string) (*db.UpdateQuery, error) {
 		where = w
 		q = q[:wi]
 	}
-	vals := db.Values{}
+	vals := tinydb.Values{}
 	sets := strings.Split(strings.TrimSpace(q[si+len("SET"):]), ",")
 	for _, s := range sets {
 		ss := strings.SplitN(s, "=", 2)
@@ -120,24 +121,24 @@ func (qp QueryParser) parseUpdate(q string) (*db.UpdateQuery, error) {
 		}
 		var v *string
 		ss[1] = strings.TrimSpace(ss[1])
-		if ss[1] != db.NULL {
+		if ss[1] != queries.NULL {
 			v = &ss[1]
 		}
 		vals[strings.TrimSpace(ss[0])] = v
 	}
-	return &db.UpdateQuery{
+	return &queries.UpdateQuery{
 		TableName: tn,
 		Values:    vals,
 		Where:     where,
 	}, nil
 }
 
-func (qp QueryParser) parseDelete(q string) (*db.DeleteQuery, error) {
+func (qp QueryParser) parseDelete(q string) (*queries.DeleteQuery, error) {
 	if !strings.HasPrefix(strings.ToUpper(q), "FROM") {
 		return nil, fmt.Errorf("missing FROM in query")
 	}
 	qs := strings.SplitN(strings.TrimSpace(q[4:]), " ", 2)
-	var wh db.WhereClause
+	var wh queries.WhereClause
 	if len(qs) > 1 {
 		w, err := qp.parseWhere(qs[1])
 		if err != nil {
@@ -145,13 +146,13 @@ func (qp QueryParser) parseDelete(q string) (*db.DeleteQuery, error) {
 		}
 		wh = w
 	}
-	return &db.DeleteQuery{
+	return &queries.DeleteQuery{
 		TableName: qs[0],
 		Where:     wh,
 	}, nil
 }
 
-func (qp QueryParser) parseWhere(q string) (db.WhereClause, error) {
+func (qp QueryParser) parseWhere(q string) (queries.WhereClause, error) {
 	if q == "" {
 		return nil, nil
 	}
@@ -160,7 +161,7 @@ func (qp QueryParser) parseWhere(q string) (db.WhereClause, error) {
 	}
 	q = strings.TrimSpace(q[5:])
 	ws := strings.Split(q, "AND")
-	wh := db.WhereClause{}
+	wh := queries.WhereClause{}
 	for _, w := range ws {
 		v := strings.SplitN(w, "=", 2)
 		if len(v) != 2 {
@@ -171,11 +172,11 @@ func (qp QueryParser) parseWhere(q string) (db.WhereClause, error) {
 	return wh, nil
 }
 
-func valuesList(keys []string, vals []string) (db.Values, error) {
+func valuesList(keys []string, vals []string) (tinydb.Values, error) {
 	if len(keys) != len(vals) {
 		return nil, fmt.Errorf("columns / values count mismatch")
 	}
-	vm := db.Values{}
+	vm := tinydb.Values{}
 	for i, k := range keys {
 		vs := strings.Trim(vals[i], "'")
 		vm[k] = &vs

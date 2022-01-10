@@ -2,12 +2,13 @@ package queryparse
 
 import (
 	"context"
-	"eurozulu/tinydb/db"
+	"eurozulu/tinydb/queries"
+	"eurozulu/tinydb/tinydb"
 	"reflect"
 	"testing"
 )
 
-var testSchema = db.Schema{
+var testSchema = tinydb.Schema{
 	"t1": {
 		"c1-1": true,
 		"c1-2": true,
@@ -32,10 +33,10 @@ func TestQueryParser_ParseInsertValues(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to parse query %s", err)
 	}
-	if _, ok := q.(*db.InsertValuesQuery); !ok {
-		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*db.InsertValuesQuery", reflect.TypeOf(q).Elem().Name())
+	if _, ok := q.(*queries.InsertValuesQuery); !ok {
+		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*tinydb.InsertValuesQuery", reflect.TypeOf(q).Elem().Name())
 	}
-	tdb := db.NewDatabase(testSchema)
+	tdb := tinydb.NewDatabase(testSchema)
 	rCh, err := q.Execute(context.TODO(), tdb)
 	if err != nil {
 		t.Fatalf("failed to execute query %s", err)
@@ -67,10 +68,10 @@ func TestQueryParser_ParseSelect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to parse query %s", err)
 	}
-	if _, ok := q.(*db.SelectQuery); !ok {
-		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*db.SelectQuery", reflect.TypeOf(q).Elem().Name())
+	if _, ok := q.(*queries.SelectQuery); !ok {
+		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*SelectQuery", reflect.TypeOf(q).Elem().Name())
 	}
-	tdb := db.NewDatabase(testSchema)
+	tdb := tinydb.NewDatabase(testSchema)
 	_, err = q.Execute(context.TODO(), tdb)
 	if err != nil {
 		t.Fatalf("failed to execute query %s", err)

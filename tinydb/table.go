@@ -1,4 +1,4 @@
-package db
+package tinydb
 
 import (
 	"encoding/json"
@@ -150,7 +150,7 @@ func (tb table) Insert(values Values) (Key, error) {
 
 func (tb table) MarshalJSON() ([]byte, error) {
 	s := &struct {
-		Keys    keyColumn         `json:"keys"`
+		Keys    keyColumn         `json:"Keys"`
 		Columns map[string]column `json:"columns"`
 	}{
 		Keys:    tb.keys,
@@ -161,7 +161,7 @@ func (tb table) MarshalJSON() ([]byte, error) {
 
 func (tb *table) UnmarshalJSON(bytes []byte) error {
 	s := &struct {
-		Keys    keyColumn         `json:"keys"`
+		Keys    keyColumn         `json:"Keys"`
 		Columns map[string]column `json:"columns"`
 	}{}
 	if err := json.Unmarshal(bytes, s); err != nil {
@@ -170,15 +170,6 @@ func (tb *table) UnmarshalJSON(bytes []byte) error {
 	tb.keys = s.Keys
 	tb.columns = s.Columns
 	return nil
-}
-
-func containsString(s string, ss []string) int {
-	for i, sz := range ss {
-		if sz == s {
-			return i
-		}
-	}
-	return -1
 }
 
 func newTable(columns map[string]bool) Table {
