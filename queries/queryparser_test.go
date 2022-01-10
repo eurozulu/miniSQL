@@ -1,8 +1,7 @@
-package queryparser
+package queries
 
 import (
 	"context"
-	"eurozulu/tinydb/queries"
 	"eurozulu/tinydb/tinydb"
 	"reflect"
 	"testing"
@@ -33,7 +32,7 @@ func TestQueryParser_ParseInsertValues(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to parse query %s", err)
 	}
-	if _, ok := q.(*queries.InsertValuesQuery); !ok {
+	if _, ok := q.(*InsertValuesQuery); !ok {
 		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*tinydb.InsertValuesQuery", reflect.TypeOf(q).Elem().Name())
 	}
 	tdb := tinydb.NewDatabase(testSchema)
@@ -68,7 +67,7 @@ func TestQueryParser_ParseSelect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to parse query %s", err)
 	}
-	if _, ok := q.(*queries.SelectQuery); !ok {
+	if _, ok := q.(*SelectQuery); !ok {
 		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*SelectQuery", reflect.TypeOf(q).Elem().Name())
 	}
 	tdb := tinydb.NewDatabase(testSchema)

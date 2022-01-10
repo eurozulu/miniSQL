@@ -5,6 +5,7 @@ import (
 	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type DeleteQuery struct {
@@ -33,4 +34,23 @@ func (q DeleteQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 		}
 	}(&q, ch)
 	return ch, nil
+}
+
+func NewDeleteQuery(q string) (*DeleteQuery, error) {
+	if !strings.HasPrefix(strings.ToUpper(q), "FROM") {
+		return nil, fmt.Errorf("missing FROM in query")
+	}
+	qs := strings.SplitN(strings.TrimSpace(q[4:]), " ", 2)
+	var wh WhereClause
+	if len(qs) > 1 {
+		w, err := NewWhere(strings.Join(qs[1:], " "))
+		if err != nil {
+			return nil, err
+		}
+		wh = w
+	}
+	return &DeleteQuery{
+		TableName: qs[0],
+		Where:     wh,
+	}, nil
 }

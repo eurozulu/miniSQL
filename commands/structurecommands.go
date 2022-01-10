@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"eurozulu/tinydb/queryparser"
 	"eurozulu/tinydb/stringutil"
 	"eurozulu/tinydb/tinydb"
 	"fmt"
@@ -54,7 +53,7 @@ func dropCommand(cmd string, out io.Writer) error {
 }
 
 func createTable(cmd string, out io.Writer) error {
-	sc, err := createSchema(cmd)
+	sc, err := tinydb.NewSchema(cmd)
 	if err != nil {
 		return err
 	}
@@ -64,7 +63,7 @@ func createTable(cmd string, out io.Writer) error {
 }
 
 func createColumn(cmd string, out io.Writer) error {
-	sc, err := createSchema(cmd)
+	sc, err := tinydb.NewSchema(cmd)
 	if err != nil {
 		return err
 	}
@@ -93,7 +92,7 @@ func dropTable(tableName string, out io.Writer) error {
 }
 
 func dropColumn(cmd string, out io.Writer) error {
-	sc, err := createSchema(cmd)
+	sc, err := tinydb.NewSchema(cmd)
 	if err != nil {
 		return err
 	}
@@ -127,7 +126,11 @@ func dropColumn(cmd string, out io.Writer) error {
 }
 
 func dropDatabase(cmd string, out io.Writer) error {
-	sc, err := createCurrentSchema(cmd)
+	tbs := strings.Split(cmd, ",")
+	if cmd == "" || tbs[0] == "" {
+		tbs = Database.TableNames()
+	}
+	sc, err := tinydb.NewSchemaFromTables(Database, tbs...)
 	if err != nil {
 		return err
 	}
@@ -143,43 +146,4 @@ func dropDatabase(cmd string, out io.Writer) error {
 	_, err = fmt.Fprintf(out, "dropped %d table%s\n", len(sc), s)
 	Prompt = ">"
 	return err
-}
-
-func createCurrentSchema(cmd string) (tinydb.Schema, error) {
-	if cmd == "" {
-		cmd = strings.Join(Database.TableNames(), ",")
-	}
-	tns := strings.Split(cmd, ",")
-	sc := tinydb.Schema{}
-	for _, tn := range tns {
-		t, err := Database.Table(tn)
-		if err != nil {
-			return nil, err
-		}
-		cols := map[string]bool{}
-		for _, cn := range t.ColumnNames() {
-			cols[cn] = true
-		}
-		sc[tn] = cols
-	}
-	return sc, nil
-}
-
-func createSchema(cmd string) (tinydb.Schema, error) {
-	if cmd == "" {
-		return nil, fmt.Errorf("no table name found")
-	}
-	cmds := strings.SplitN(cmd, " ", 2)
-	if len(cmds) < 2 {
-		return nil, fmt.Errorf("no columns stated for table %q", cmds[0])
-	}
-	_, c, err := queryparser.ParseList(strings.TrimSpace(cmds[1]))
-	if err != nil {
-		return nil, err
-	}
-	cols := map[string]bool{}
-	for _, col := range c {
-		cols[col] = true
-	}
-	return tinydb.Schema{cmds[0]: cols}, nil
 }

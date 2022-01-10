@@ -2,10 +2,12 @@ package queries
 
 import (
 	"context"
+	"eurozulu/tinydb/stringutil"
 	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 )
 
 type InsertValuesQuery struct {
@@ -106,4 +108,55 @@ func (q InsertQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 		}
 	}(&q, ch)
 	return ch, nil
+}
+
+func valuesList(keys []string, vals []string) (tinydb.Values, error) {
+	if len(keys) != len(vals) {
+		return nil, fmt.Errorf("columns / values count mismatch")
+	}
+	vm := tinydb.Values{}
+	for i, k := range keys {
+		vs := strings.Trim(vals[i], "'")
+		vm[k] = &vs
+	}
+	return vm, nil
+}
+
+func NewInsertQuery(q string) (Query, error) {
+	if !strings.HasPrefix(strings.ToUpper(q), "INTO") {
+		return nil, fmt.Errorf("missing INTO in query")
+	}
+	qs := strings.SplitN(strings.TrimSpace(q[4:]), " ", 2)
+	if len(qs) < 2 {
+		return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
+	}
+	tn := qs[0]
+	q, cols, err := stringutil.ParseList(qs[1])
+	if err != nil {
+		return nil, fmt.Errorf("invalid columns %s", err)
+	}
+
+	if strings.HasPrefix(strings.ToUpper(q), "VALUES") {
+		_, vals, err := stringutil.ParseList(strings.TrimSpace(q[6:]))
+		vs, err := valuesList(cols, vals)
+		if err != nil {
+			return nil, err
+		}
+		return &InsertValuesQuery{
+			TableName: tn,
+			Values:    vs,
+		}, nil
+	}
+	if strings.HasPrefix(strings.ToUpper(q), "SELECT") {
+		sq, err := NewSelectQuery(strings.TrimSpace(q[6:]))
+		if err != nil {
+			return nil, err
+		}
+		return &InsertSelectQuery{
+			TableName:   tn,
+			SelectQuery: sq,
+		}, nil
+
+	}
+	return nil, fmt.Errorf("invalid INSERT.  No Values or Select")
 }

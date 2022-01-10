@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"eurozulu/tinydb/queries"
-	"eurozulu/tinydb/queryparser"
 	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"io"
@@ -18,7 +17,7 @@ var queryHelp = "Query commands: SELECT, INSERT, UPDATE and DELETE are supported
 	"\tDELETE FROM <table> [ WHERE <column>=<value>|NULL [AND <column>=<value>|NULL]...]\n"
 
 func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
-	qp := &queryparser.QueryParser{}
+	qp := &queries.QueryParser{}
 	q, err := qp.Parse(cmd)
 	if err != nil {
 		return err

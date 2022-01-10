@@ -5,6 +5,7 @@ import (
 	"eurozulu/tinydb/stringutil"
 	"fmt"
 	"log"
+	"strings"
 
 	"eurozulu/tinydb/tinydb"
 )
@@ -74,4 +75,30 @@ func expandColumnNames(t tinydb.Table, columns []string) ([]string, error) {
 		}
 	}
 	return cols, nil
+}
+
+func NewSelectQuery(query string) (*SelectQuery, error) {
+	fi := strings.Index(strings.ToUpper(query), "FROM")
+	if fi < 0 {
+		return nil, fmt.Errorf("missing FROM in query")
+	}
+	cols := strings.Split(strings.TrimSpace(query[:fi]), ",")
+	query = strings.TrimSpace(query[fi+len("FROM)"):])
+	cmd := strings.SplitN(query, " ", 2)
+	if cmd[0] == "" {
+		return nil, fmt.Errorf("no table name given")
+	}
+	var where WhereClause
+	if len(cmd) > 1 {
+		w, err := NewWhere(strings.Join(cmd[1:], " "))
+		if err != nil {
+			return nil, err
+		}
+		where = w
+	}
+	return &SelectQuery{
+		TableName: cmd[0],
+		Columns:   cols,
+		Where:     where,
+	}, nil
 }
