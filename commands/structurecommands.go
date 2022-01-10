@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"eurozulu/tinydb/queryparse"
+	"eurozulu/tinydb/queryparser"
 	"eurozulu/tinydb/stringutil"
 	"eurozulu/tinydb/tinydb"
 	"fmt"
@@ -126,7 +126,7 @@ func createSchema(cmd string) (tinydb.Schema, error) {
 	if len(cmds) < 2 {
 		return nil, fmt.Errorf("no columns stated for table %q", cmds[0])
 	}
-	_, c, err := queryparse.ParseList(strings.TrimSpace(cmds[1]))
+	_, c, err := queryparser.ParseList(strings.TrimSpace(cmds[1]))
 	if err != nil {
 		return nil, err
 	}

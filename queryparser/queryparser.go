@@ -1,4 +1,4 @@
-package queryparse
+package queryparser
 
 import (
 	"eurozulu/tinydb/queries"
