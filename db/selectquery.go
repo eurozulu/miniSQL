@@ -21,7 +21,7 @@ func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, er
 	if !ok {
 		return nil, fmt.Errorf("%q is not a known table", q.TableName)
 	}
-	cols, err := expandColumnNames(q.Columns, t.ColumnNames())
+	cols, err := expandColumnNames(t, q.Columns)
 	if err != nil {
 		return nil, fmt.Errorf("%w in table %s", err, q.TableName)
 	}
@@ -61,16 +61,17 @@ func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, er
 
 // expandColumnNames expands the given list of column names and validates the given list as known names.
 // columns may contain "*" wild card to indicate all column names.
-func expandColumnNames(sel []string, columns []string) ([]string, error) {
-	if len(sel) == 0 {
-		return columns, nil
+func expandColumnNames(t Table, columns []string) ([]string, error) {
+	tcols := t.ColumnNames()
+	if len(columns) == 0 {
+		return tcols, nil
 	}
 	var cols []string
-	for _, c := range sel {
+	for _, c := range columns {
 		if c == "*" {
-			cols = append(cols, columns...)
+			cols = append(cols, tcols...)
 		} else {
-			if containsString(c, columns) < 0 {
+			if containsString(c, tcols) < 0 {
 				return nil, fmt.Errorf("%s is an unknown column", c)
 			}
 			cols = append(cols, c)

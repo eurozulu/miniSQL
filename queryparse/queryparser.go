@@ -200,7 +200,9 @@ func ParseList(q string) (string, []string, error) {
 	}
 	cols := strings.Split(ls, ",")
 	for i, c := range cols {
-		cols[i] = strings.TrimSpace(c)
+		c = strings.Trim(strings.TrimSpace(c), "\"")
+		c = strings.Trim(c, "'")
+		cols[i] = c
 	}
 	return q, cols, nil
 }

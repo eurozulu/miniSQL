@@ -57,7 +57,11 @@ func orderedColumnNames(values db.Values) []string {
 		keys[i] = k
 		i++
 	}
-	sort.Strings(keys)
+	sort.Slice(keys, func(i, j int) bool {
+		s := []string{keys[i], keys[j]}
+		sort.Strings(s)
+		return s[0] == keys[i]
+	})
 	return keys
 }
 
