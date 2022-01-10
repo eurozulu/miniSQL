@@ -17,13 +17,16 @@ var structueHelp = "Supports CREATE and DROP to structure the database tables an
 
 func createCommand(cmd string, out io.Writer) error {
 	cmds := strings.SplitN(cmd, " ", 2)
+	if len(cmds) < 2 {
+		return fmt.Errorf("invalid CREATE command. Must state TABLE or COLUMN and a table name")
+	}
 	switch strings.ToUpper(cmds[0]) {
 	case "TABLE":
 		return createTable(cmds[1])
 	case "COLUMN", "COL":
-		return createColumn(cmds[1])
+		return createColumn(strings.Join(cmds[1:], " "))
 	default:
-		return fmt.Errorf("unknown CREATE type, must be TABLE or COLUMN")
+		return fmt.Errorf("%s is an unknown CREATE type, must be TABLE or COLUMN", strings.ToUpper(cmds[0]))
 	}
 }
 func dropCommand(cmd string, out io.Writer) error {
@@ -67,7 +70,7 @@ func createColumn(cmd string) error {
 		break
 	}
 	if !Database.ContainsTable(tn) {
-		return fmt.Errorf("%s is not a known table")
+		return fmt.Errorf("%q is not a known table", tn)
 	}
 	Database.AlterDatabase(sc)
 	return nil

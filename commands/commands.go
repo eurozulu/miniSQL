@@ -85,35 +85,19 @@ func parseCommand(ctx context.Context, out io.Writer, args ...string) error {
 	case "SELECT", "INSERT", "DELETE", "UPDATE":
 		err = queryCommand(ctx, strings.Join(args, " "), out)
 	case "CREATE":
-		if len(args) < 2 {
-			err = fmt.Errorf("no create parameter")
-		} else {
-			err = createCommand(strings.Join(args[1:], " "), out)
-		}
+		err = createCommand(strings.Join(args[1:], " "), out)
 
 	case "DROP":
 		err = dropCommand(strings.Join(args[1:], " "), out)
 
 	case "RESTORE":
-		if len(args) > 1 {
-			err = RestoreCommand(strings.TrimSpace(args[1]), out)
-		} else {
-			err = fmt.Errorf("no RESTORE parameter")
-		}
+		err = RestoreCommand(strings.Join(args[1:], ""), out)
 
 	case "DUMP":
-		if len(args) > 1 {
-			err = DumpCommand(strings.TrimSpace(args[1]), out)
-		} else {
-			err = fmt.Errorf("no DUMP parameter")
-		}
+		err = DumpCommand(strings.Join(args[1:], ""), out)
 
 	case "DESC", "DESCRIBE":
-		if len(args) > 1 {
-			err = DescribeCommand(strings.TrimSpace(args[1]), out)
-		} else {
-			err = fmt.Errorf("no DESCRIBE parameter")
-		}
+		err = DescribeCommand(strings.Join(args[1:], ""), out)
 
 	case "TABLES":
 		err = TablesCommand("", out)
