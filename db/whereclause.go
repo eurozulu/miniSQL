@@ -13,9 +13,9 @@ const (
 
 const keyBuffer = 255
 
-type Where map[string]string
+type WhereClause map[string]string
 
-func (w Where) keys(ctx context.Context, t *table) <-chan Key {
+func (w WhereClause) keys(ctx context.Context, t Table) <-chan Key {
 	ch := make(chan Key, keyBuffer)
 	go func(ch chan<- Key) {
 		defer close(ch)
@@ -45,7 +45,7 @@ func (w Where) keys(ctx context.Context, t *table) <-chan Key {
 	return ch
 }
 
-func (w Where) ColumnNames() []string {
+func (w WhereClause) ColumnNames() []string {
 	cols := make([]string, len(w))
 	var index int
 	for k := range w {
@@ -55,7 +55,7 @@ func (w Where) ColumnNames() []string {
 	return cols
 }
 
-func (w Where) match(v Values) bool {
+func (w WhereClause) match(v Values) bool {
 	for wk, wv := range w {
 		vv, ok := v[wk]
 		if !ok {

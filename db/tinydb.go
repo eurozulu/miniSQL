@@ -12,7 +12,7 @@ type Key int64
 type Schema map[string]map[string]bool
 
 type TinyDB struct {
-	tables map[string]*table
+	tables map[string]Table
 }
 
 func (db TinyDB) TableNames() []string {
@@ -86,7 +86,7 @@ func LoadSchema(filepath string) (Schema, error) {
 }
 
 func NewDatabase(schema Schema) *TinyDB {
-	db := &TinyDB{tables: map[string]*table{}}
+	db := &TinyDB{tables: map[string]Table{}}
 	if schema != nil {
 		db.AlterDatabase(schema)
 	}

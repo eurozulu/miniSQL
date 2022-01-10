@@ -30,5 +30,13 @@ func Restore(filename string, tdb *TinyDB) error {
 			log.Println(err)
 		}
 	}(f)
-	return json.NewDecoder(f).Decode(&tdb.tables)
+
+	tables := map[string]*table{}
+	if err := json.NewDecoder(f).Decode(&tables); err != nil {
+		return err
+	}
+	for k, t := range tables {
+		tdb.tables[k] = t
+	}
+	return nil
 }

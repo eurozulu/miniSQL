@@ -8,7 +8,7 @@ import (
 
 type DeleteQuery struct {
 	TableName string
-	Where     Where
+	Where     WhereClause
 }
 
 func (q DeleteQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, error) {
@@ -19,18 +19,19 @@ func (q DeleteQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, er
 	ch := make(chan Result)
 	go func(ch chan<- Result) {
 		defer close(ch)
-		keys := q.Where.keys(ctx, t)
-		for k := range keys {
-			t.Delete(k)
-
-			select {
-			case <-ctx.Done():
-				return
-			case ch <- &result{
-				tableName: q.TableName,
-				values:    Values{strconv.Itoa(int(k)): nil},
-			}:
-			}
+		var keys []Key
+		for k := range q.Where.keys(ctx, t) {
+			keys = append(keys, k)
+		}
+		keys = t.Delete(keys...)
+		ks := strconv.Itoa(len(keys))
+		select {
+		case <-ctx.Done():
+			return
+		case ch <- &result{
+			tableName: q.TableName,
+			values:    Values{"deleted": &ks},
+		}:
 		}
 	}(ch)
 	return ch, nil

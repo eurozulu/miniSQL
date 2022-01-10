@@ -13,7 +13,7 @@ type Query interface {
 type SelectQuery struct {
 	TableName string
 	Columns   []string
-	Where     Where
+	Where     WhereClause
 }
 
 func (q SelectQuery) Execute(ctx context.Context, db *TinyDB) (<-chan Result, error) {

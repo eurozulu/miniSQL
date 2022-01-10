@@ -8,6 +8,18 @@ import (
 
 type Values map[string]*string
 
+type Table interface {
+	ColumnNames() []string
+	AlterColumns(cols map[string]bool)
+	ContainsID(k Key) bool
+	NextID() Key
+
+	Select(id Key, columns []string) (Values, error)
+	Insert(values Values) (Key, error)
+	Update(id Key, values Values) error
+	Delete(id ...Key) []Key
+}
+
 type table struct {
 	keys    keyColumn
 	columns map[string]column
@@ -103,15 +115,18 @@ func (tb table) Update(id Key, values Values) error {
 	return tb.updateRow(id, values)
 }
 
-func (tb table) Delete(id ...Key) {
+func (tb table) Delete(id ...Key) []Key {
+	var dks []Key
 	for _, k := range id {
 		if tb.keys[k] {
 			tb.keys[k] = false
+			dks = append(dks, k)
 		}
 		for _, col := range tb.columns {
 			delete(col, k)
 		}
 	}
+	return dks
 }
 
 func (tb table) Insert(values Values) (Key, error) {

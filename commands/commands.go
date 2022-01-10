@@ -88,7 +88,7 @@ func ReadCommands(ctx context.Context, out io.Writer, done chan bool) {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 		}
 
-		out.Write([]byte(">"))
+		_, _ = out.Write([]byte(">"))
 	}
 }
 
@@ -107,14 +107,20 @@ func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
 		result[r.TableName()] = append(result[r.TableName()], r.Values())
 	}
 	if len(result) == 0 {
-		fmt.Fprintf(out, "no results\n")
+		if _, err := fmt.Fprintf(out, "no results\n"); err != nil {
+			return err
+		}
 		return nil
 	}
 
 	for t, v := range result {
-		fmt.Fprintf(out, "Table: %s\n", t)
+		if _, err := fmt.Fprintf(out, "Table: %s\n", t); err != nil {
+			return err
+		}
 		cols := orderedColumnNames(v[0])
-		fmt.Fprintf(out, "%s\n", strings.Join(cols, "\t"))
+		if _, err := fmt.Fprintf(out, "%s\n", strings.Join(cols, "\t")); err != nil {
+			return err
+		}
 		orderedColumnValues(cols, out, v)
 	}
 	return nil
@@ -147,13 +153,28 @@ func DumpCommand(cmd string, out io.Writer) error {
 	if cmd == "" {
 		return fmt.Errorf("must specifiy the file path to write to")
 	}
-	return db.Dump(cmd, Database)
+	if err := db.Dump(cmd, Database); err != nil {
+		return err
+	}
+	_, err := fmt.Fprintf(out, "dumped %d tables to %s\n", len(Database.TableNames()), cmd)
+	return err
 }
+
 func RestoreCommand(cmd string, out io.Writer) error {
 	if cmd == "" {
 		return fmt.Errorf("must specifiy the file path to restore from")
 	}
-	return db.Restore(cmd, Database)
+	if err := db.Restore(cmd, Database); err != nil {
+		return err
+	}
+
+	tc := len(Database.TableNames())
+	var ts string
+	if tc != 1 {
+		ts = "s"
+	}
+	_, err := fmt.Fprintf(out, "restored %d table%s from %s\n", tc, ts, cmd)
+	return err
 }
 
 func DescribeCommand(cmd string, out io.Writer) error {

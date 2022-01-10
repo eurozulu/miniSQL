@@ -35,7 +35,7 @@ func (qp QueryParser) parseSelect(q string) (*db.SelectQuery, error) {
 	cols := strings.Split(strings.TrimSpace(q[:fi]), ",")
 	q = strings.TrimSpace(q[fi+4:])
 	cmd := strings.SplitN(q, " ", 2)
-	var where db.Where
+	var where db.WhereClause
 	if len(cmd) > 1 {
 		w, err := qp.parseWhere(cmd[1])
 		if err != nil {
@@ -94,7 +94,7 @@ func (qp QueryParser) parseDelete(q string) (*db.DeleteQuery, error) {
 		return nil, fmt.Errorf("missing FROM in query")
 	}
 	qs := strings.SplitN(strings.TrimSpace(q[4:]), " ", 2)
-	var wh db.Where
+	var wh db.WhereClause
 	if len(qs) > 1 {
 		w, err := qp.parseWhere(qs[1])
 		if err != nil {
@@ -108,7 +108,7 @@ func (qp QueryParser) parseDelete(q string) (*db.DeleteQuery, error) {
 	}, nil
 }
 
-func (qp QueryParser) parseWhere(q string) (db.Where, error) {
+func (qp QueryParser) parseWhere(q string) (db.WhereClause, error) {
 	if q == "" {
 		return nil, nil
 	}
@@ -117,7 +117,7 @@ func (qp QueryParser) parseWhere(q string) (db.Where, error) {
 	}
 	q = strings.TrimSpace(q[5:])
 	ws := strings.Split(q, "AND")
-	wh := db.Where{}
+	wh := db.WhereClause{}
 	for _, w := range ws {
 		v := strings.SplitN(w, "=", 2)
 		if len(v) != 2 {
