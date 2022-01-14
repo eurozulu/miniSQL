@@ -68,12 +68,13 @@ func (q SelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 
 func (q SelectQuery) insertInto(ctx context.Context, db *tinydb.TinyDB, ch <-chan Result) (chan Result, error) {
 	t := q.Into
+	if db.ContainsTable(t) {
+		return nil, fmt.Errorf("table %q already exists. Use INSERT INTO to insert into existing table")
+	}
 	cols := removeColumn("_id", q.Columns)
-	if !db.ContainsTable(t) {
-		err := alterTable(t, cols, db)
-		if err != nil {
-			return nil, err
-		}
+	err := alterTable(t, cols, db)
+	if err != nil {
+		return nil, err
 	}
 
 	chOut := make(chan Result)
@@ -198,7 +199,6 @@ func NewSelectQuery(query string) (*SelectQuery, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &SelectQuery{
 		TableName: table,
 		Columns:   cols,
