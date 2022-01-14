@@ -2,7 +2,7 @@
 ## A simple, memory based, SQL database with a tiny footprint.  
 
 Aimed at getting SQL functionality when a full blown RDB is unsuitable.  
-With an executable of only 2 Mb, this tiny little database performs many of the basic tasks of its far larger counterparts.  
+With an executable under 3 Mb, this tiny little database performs many of the basic tasks of its far larger counterparts.  
 
 ### Usage  
 TinyDb has its own command line interface (CLI) to interact with the user.  

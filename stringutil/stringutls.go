@@ -42,8 +42,10 @@ func BracketedString(s string) (bracketed, rest string) {
 			count--
 			if count == 0 {
 				index = i
-				break
 			}
+		}
+		if index >= 0 {
+			break
 		}
 	}
 	if count != 0 || index < 0 {
@@ -54,6 +56,14 @@ func BracketedString(s string) (bracketed, rest string) {
 		rest = s[index+1:]
 	}
 	return bracketed, rest
+}
+
+func SplitTrim(s string, sep string) []string {
+	ss := strings.Split(s, sep)
+	for i, sz := range ss {
+		ss[i] = strings.TrimSpace(sz)
+	}
+	return ss
 }
 
 // SplitIgnoreQuoted splits the given string with the given seperator, ignoring any poart of the string enclosed in quotes.

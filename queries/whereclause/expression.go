@@ -144,6 +144,7 @@ func ParseExpression(s string) (Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	rest = strings.TrimSpace(rest)
 	// further expressions must be delimited with operators OR or AND
 	for len(rest) > 0 {
 		// parse joining operator (AND/OR), using previously parsed expression as its operand

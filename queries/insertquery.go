@@ -82,9 +82,9 @@ func NewInsertQuery(q string) (*InsertQuery, error) {
 	if colList == "" {
 		return nil, fmt.Errorf("invalid INSERT query.  No columns found. list columns to insert, inside brackets")
 	}
-	cols := strings.Split(colList, ",")
-
-	if !strings.HasPrefix(rest, "VALUES") {
+	cols := stringutil.SplitTrim(colList, ",")
+	rest = strings.TrimSpace(rest)
+	if !strings.HasPrefix(strings.ToUpper(rest), "VALUES") {
 		return nil, fmt.Errorf("invalid INSERT query.  missing VALUES keyword")
 	}
 	rest = strings.TrimSpace(rest[len("VALUES"):])
@@ -93,7 +93,7 @@ func NewInsertQuery(q string) (*InsertQuery, error) {
 	if valList == "" {
 		return nil, fmt.Errorf("no values found after VALUES.  Place values in brackets")
 	}
-	vals := strings.Split(valList, ",")
+	vals := stringutil.SplitTrim(valList, ",")
 	vs, err := valuesList(cols, vals)
 	if err != nil {
 		return nil, err
