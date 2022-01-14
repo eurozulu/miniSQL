@@ -2,6 +2,8 @@ package queries
 
 import (
 	"context"
+	"eurozulu/tinydb/queries/whereclause"
+	"eurozulu/tinydb/stringutil"
 	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"strconv"
@@ -10,7 +12,7 @@ import (
 
 type DeleteQuery struct {
 	TableName string
-	Where     WhereClause
+	Where     whereclause.WhereClause
 }
 
 func (q DeleteQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
@@ -41,20 +43,31 @@ func (q DeleteQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 // i.e it should begin with the keyword FROM.
 // e.g. "FROM mytable WHERE _id=2"
 func NewDeleteQuery(q string) (*DeleteQuery, error) {
-	if !strings.HasPrefix(strings.ToUpper(q), "FROM") {
+	if !strings.HasPrefix(strings.ToUpper(q), "FROM ") {
 		return nil, fmt.Errorf("missing FROM in query")
 	}
-	qs := strings.SplitN(strings.TrimSpace(q[4:]), " ", 2)
-	var wh WhereClause
-	if len(qs) > 1 {
-		w, err := NewWhere(strings.Join(qs[1:], " "))
+	// strip leading FROM
+	_, q = stringutil.FirstWord(q)
+	table, rest := stringutil.FirstWord(q)
+	if table == "" {
+		return nil, fmt.Errorf("missing table name for delete")
+	}
+
+	var wh whereclause.WhereClause
+	if len(rest) > 1 {
+		if !strings.HasPrefix(strings.ToUpper(q), "WHERE") {
+			return nil, fmt.Errorf("%s is not a recognised WHERE", q)
+		}
+		// strip leading 'WHERE'
+		_, rest = stringutil.FirstWord(rest)
+		w, err := whereclause.NewWhere(rest)
 		if err != nil {
 			return nil, err
 		}
 		wh = w
 	}
 	return &DeleteQuery{
-		TableName: qs[0],
+		TableName: table,
 		Where:     wh,
 	}, nil
 }

@@ -1,25 +1,28 @@
 package queries
 
 import (
+	"eurozulu/tinydb/stringutil"
 	"fmt"
 	"strings"
 )
 
 func ParseQuery(q string) (Query, error) {
-	cmd := strings.SplitN(q, " ", 2)
-	if len(cmd) != 2 {
-		return nil, fmt.Errorf("invalid query, missing column names")
+	cmd, rest := stringutil.FirstWord(q)
+	if cmd == "" {
+		return nil, fmt.Errorf("invalid query, missing query type SELECT, INSERT, DELETE or UPDATE")
 	}
-	q = strings.Join(cmd[1:], " ")
-	switch strings.ToUpper(cmd[0]) {
+	if rest == "" {
+		return nil, fmt.Errorf("invalid query, missing values after %s", cmd)
+	}
+	switch strings.ToUpper(cmd) {
 	case "SELECT":
-		return NewSelectQuery(q)
+		return NewSelectQuery(rest)
 	case "INSERT":
-		return NewInsertQuery(q)
+		return NewInsertQuery(rest)
 	case "UPDATE":
-		return NewUpdateQuery(q)
+		return NewUpdateQuery(rest)
 	case "DELETE":
-		return NewDeleteQuery(q)
+		return NewDeleteQuery(rest)
 
 	default:
 		return nil, fmt.Errorf("unrecognised query")

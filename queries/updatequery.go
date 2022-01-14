@@ -2,6 +2,8 @@ package queries
 
 import (
 	"context"
+	"eurozulu/tinydb/queries/whereclause"
+	"eurozulu/tinydb/stringutil"
 	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"strconv"
@@ -11,7 +13,7 @@ import (
 type UpdateQuery struct {
 	TableName string
 	Values    tinydb.Values
-	Where     WhereClause
+	Where     whereclause.WhereClause
 }
 
 func (q UpdateQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
@@ -61,41 +63,49 @@ func (q UpdateQuery) updateRow(k tinydb.Key, t tinydb.Table) Result {
 // i.e it should begin with the table name.
 // e.g. "mytable SET col1=bla, col3=haha WHERE col2=hoho"
 func NewUpdateQuery(q string) (*UpdateQuery, error) {
-	si := strings.Index(strings.ToUpper(q), "SET")
-	if si < 2 {
-		return nil, fmt.Errorf("missing SET command")
-	}
-	tn := strings.TrimSpace(q[:si])
-	if tn == "" {
+	table, rest := stringutil.FirstWord(q)
+	if table == "" {
 		return nil, fmt.Errorf("missing table name")
 	}
 
-	var where WhereClause
-	wi := strings.Index(strings.ToUpper(q), "WHERE")
+	if !strings.HasPrefix(strings.ToUpper(rest), "SET") {
+		return nil, fmt.Errorf("missing SET command")
+	}
+	_, rest = stringutil.FirstWord(rest)
+
+	var where whereclause.WhereClause
+	wi := strings.Index(strings.ToUpper(rest), "WHERE")
 	if wi >= 0 {
-		w, err := NewWhere(q[wi:])
+		w, err := whereclause.NewWhere(rest[wi:])
 		if err != nil {
 			return nil, err
 		}
 		where = w
-		q = q[:wi]
+		rest = rest[:wi]
 	}
 	vals := tinydb.Values{}
-	sets := strings.Split(strings.TrimSpace(q[si+len("SET"):]), ",")
+	sets := strings.Split(rest, ",")
 	for _, s := range sets {
 		ss := strings.SplitN(s, "=", 2)
 		if len(ss) != 2 {
 			return nil, fmt.Errorf("missing value for %s", s)
 		}
+		col := strings.TrimSpace(ss[0])
+		if col == "" {
+			return nil, fmt.Errorf("missing column name before =")
+		}
+		val := strings.TrimSpace(ss[1])
+		if val == "" {
+			return nil, fmt.Errorf("missing value after =")
+		}
 		var v *string
-		ss[1] = strings.TrimSpace(ss[1])
-		if ss[1] != NULL {
+		if val != whereclause.NULL {
 			v = &ss[1]
 		}
-		vals[strings.TrimSpace(ss[0])] = v
+		vals[col] = v
 	}
 	return &UpdateQuery{
-		TableName: tn,
+		TableName: table,
 		Values:    vals,
 		Where:     where,
 	}, nil

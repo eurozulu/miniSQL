@@ -2,6 +2,7 @@ package queries
 
 import (
 	"context"
+	"eurozulu/tinydb/queries/whereclause"
 	"eurozulu/tinydb/stringutil"
 	"fmt"
 	"log"
@@ -13,13 +14,13 @@ import (
 type SelectQuery struct {
 	TableName string
 	Columns   []string
-	Where     WhereClause
+	Where     whereclause.WhereClause
 	Into      string
 }
 
 func (q SelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
 	t, err := db.Table(q.TableName)
-	if !db.ContainsTable(q.TableName) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -173,11 +174,12 @@ func NewSelectQuery(query string) (*SelectQuery, error) {
 	var into string
 	iti := strings.Index(strings.ToUpper(query), "INTO")
 	if iti > 0 {
-		is := strings.SplitN(strings.TrimSpace(query[iti+len("INTO"):]), " ", 2)
-		into = is[0]
-		q := strings.TrimSpace(query[:iti])
-		is = append([]string{q}, is[1:]...)
-		query = strings.Join(is, " ")
+		q := strings.TrimSpace(query[iti+len("INTO"):])
+		into, q = stringutil.FirstWord(q)
+		if into == "" {
+			return nil, fmt.Errorf("missing table name after INTO")
+		}
+		query = strings.Join([]string{query[:iti], q}, " ")
 	}
 	fi := strings.Index(strings.ToUpper(query), "FROM")
 	if fi < 0 {
@@ -185,21 +187,20 @@ func NewSelectQuery(query string) (*SelectQuery, error) {
 	}
 
 	cols := strings.Split(strings.TrimSpace(query[:fi]), ",")
-	query = strings.TrimSpace(query[fi+len("FROM)"):])
-	cmd := strings.SplitN(query, " ", 2)
-	if cmd[0] == "" {
+	// trim off FROM
+	_, query = stringutil.FirstWord(query[fi:])
+	table, rest := stringutil.FirstWord(query)
+	if table == "" {
 		return nil, fmt.Errorf("no table name given")
 	}
-	var where WhereClause
-	if len(cmd) > 1 {
-		w, err := NewWhere(strings.Join(cmd[1:], " "))
-		if err != nil {
-			return nil, err
-		}
-		where = w
+
+	where, err := whereclause.NewWhere(rest)
+	if err != nil {
+		return nil, err
 	}
+
 	return &SelectQuery{
-		TableName: cmd[0],
+		TableName: table,
 		Columns:   cols,
 		Where:     where,
 		Into:      into,

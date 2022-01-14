@@ -62,20 +62,21 @@ func NewSchemaFromTables(db *TinyDB, tableName ...string) (Schema, error) {
 }
 
 func NewSchema(schema string) (Schema, error) {
-	if schema == "" {
+	table, rest := stringutil.FirstWord(schema)
+	if table == "" {
 		return nil, fmt.Errorf("no table name found")
 	}
-	cmds := strings.SplitN(schema, " ", 2)
-	if len(cmds) < 2 {
-		return nil, fmt.Errorf("no columns stated for table %q", cmds[0])
+	if rest == "" {
+		return nil, fmt.Errorf("no columns stated for table %q", table)
 	}
-	_, c, err := stringutil.ParseList(strings.TrimSpace(cmds[1]))
-	if err != nil {
-		return nil, err
+	var colList string
+	colList, rest = stringutil.BracketedString(rest)
+	if colList == "" {
+		return nil, fmt.Errorf("no columns in brackets stated for table %q", table)
 	}
 	cols := map[string]bool{}
-	for _, col := range c {
-		cols[col] = true
+	for _, col := range strings.Split(colList, ",") {
+		cols[strings.TrimSpace(col)] = true
 	}
-	return Schema{cmds[0]: cols}, nil
+	return Schema{table: cols}, nil
 }

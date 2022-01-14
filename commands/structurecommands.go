@@ -17,36 +17,34 @@ var structueHelp = "Supports CREATE and DROP to structure the database tables an
 	"\tDROP DATABASE\tDrops entire database (all tables)\n"
 
 func createCommand(cmd string, out io.Writer) error {
-	cmds := strings.SplitN(cmd, " ", 2)
-	ct := strings.ToUpper(strings.TrimSpace(cmds[0]))
+	ct, rest := stringutil.FirstWord(cmd)
 	if ct == "" {
 		return fmt.Errorf("invalid CREATE command. Must state TABLE or COLUMN and a table name")
 	}
-	cmd = strings.Join(cmds[1:], " ")
-
-	switch strings.ToUpper(cmds[0]) {
+	ct = strings.ToUpper(ct)
+	switch ct {
 	case "TABLE":
-		return createTable(cmd, out)
+		return createTable(rest, out)
 	case "COLUMN", "COL":
-		return createColumn(cmd, out)
+		return createColumn(rest, out)
 	default:
-		return fmt.Errorf("%s is an unknown CREATE type, must be TABLE or COLUMN", strings.ToUpper(cmds[0]))
+		return fmt.Errorf("%s is an unknown CREATE type, must be TABLE or COLUMN", ct)
 	}
 }
 func dropCommand(cmd string, out io.Writer) error {
-	cmds := strings.SplitN(strings.TrimSpace(cmd), " ", 2)
-	dt := strings.TrimSpace(strings.ToUpper(cmds[0]))
+	dt, rest := stringutil.FirstWord(cmd)
 	if dt == "" {
 		return fmt.Errorf("missing DROP type. must use DATABASE, TABLE or COLUMN")
 	}
-	cmd = strings.TrimSpace(strings.Join(cmds[1:], " "))
+	dt = strings.ToUpper(dt)
+
 	switch dt {
 	case "TABLE":
-		return dropTable(cmd, out)
+		return dropTable(rest, out)
 	case "COLUMN", "COL":
-		return dropColumn(cmd, out)
+		return dropColumn(rest, out)
 	case "DATABASE":
-		return dropDatabase(cmd, out)
+		return dropDatabase(rest, out)
 	default:
 		return fmt.Errorf("DROP %s, is not a known drop type, must be TABLE or COLUMN", dt)
 	}

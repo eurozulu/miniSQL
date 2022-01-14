@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"eurozulu/tinydb/queries"
+	"eurozulu/tinydb/queries/whereclause"
 	"eurozulu/tinydb/tinydb"
 	"fmt"
 	"io"
@@ -17,7 +18,7 @@ var queryHelp = "Query commands: SELECT, INSERT, UPDATE and DELETE.\n" +
 	"\t\t\tIf the INTO table exists, must have matching column names from the result.\n" +
 	"\t\t\tIf the INTO table doesn't exists, it is created with the columns of the result\n" +
 	"\t\tFROM must be followed by one or more, comma deliminated column names from the named table.\n" +
-	"\t\tWHERE optional where clause to filter result.  Current only supports AND and equality\n" +
+	"\t\tWHERE optional whereclause clause to filter result.  Current only supports AND and equality\n" +
 	"\t\t\te.g. WHERE col1=1 AND col2=thatthing\n" +
 	"\t\t\tcolumn can also be tested for NULL using the 'NULL' keyword\n" +
 	"\tINSERT INTO <table> (<column> [,<column>...]) VALUES (<value> [,<value>...])\n" +
@@ -85,5 +86,5 @@ func valueString(v *string) string {
 	if v != nil {
 		return *v
 	}
-	return queries.NULL
+	return whereclause.NULL
 }

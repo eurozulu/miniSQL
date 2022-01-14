@@ -70,29 +70,36 @@ func NewInsertQuery(q string) (*InsertQuery, error) {
 	if !strings.HasPrefix(strings.ToUpper(q), "INTO") {
 		return nil, fmt.Errorf("missing INTO in query")
 	}
-	qs := strings.SplitN(strings.TrimSpace(q[len("INTO"):]), " ", 2)
-	tn := qs[0]
-	if tn == "" {
+	// strip INTO
+	_, q = stringutil.FirstWord(q)
+	table, rest := stringutil.FirstWord(q)
+	if table == "" {
 		return nil, fmt.Errorf("missing table name after INTO")
 	}
-	q = strings.Join(qs[1:], " ")
-	vi := strings.Index(strings.ToUpper(q), "VALUES")
-	if vi < 0 {
-		return nil, fmt.Errorf("invalid INSERT query.  No VALUES given")
-	}
-	_, cols, err := stringutil.ParseList(q[:vi])
-	if err != nil {
-		return nil, fmt.Errorf("invalid columns %s", err)
-	}
 
-	q = q[vi+len("VALUES"):]
-	_, vals, err := stringutil.ParseList(strings.TrimSpace(q))
+	var colList string
+	colList, rest = stringutil.BracketedString(rest)
+	if colList == "" {
+		return nil, fmt.Errorf("invalid INSERT query.  No columns found. list columns to insert, inside brackets")
+	}
+	cols := strings.Split(colList, ",")
+
+	if !strings.HasPrefix(rest, "VALUES") {
+		return nil, fmt.Errorf("invalid INSERT query.  missing VALUES keyword")
+	}
+	rest = strings.TrimSpace(rest[len("VALUES"):])
+	var valList string
+	valList, rest = stringutil.BracketedString(rest)
+	if valList == "" {
+		return nil, fmt.Errorf("no values found after VALUES.  Place values in brackets")
+	}
+	vals := strings.Split(valList, ",")
 	vs, err := valuesList(cols, vals)
 	if err != nil {
 		return nil, err
 	}
 	return &InsertQuery{
-		TableName: tn,
+		TableName: table,
 		Columns:   cols,
 		Values:    vs,
 	}, nil
