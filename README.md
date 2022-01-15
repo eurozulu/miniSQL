@@ -45,7 +45,7 @@ WHERE is an optional set of filter conditions to limit the selected values.  See
 `INSERT INTO <table name> (<column name> [,<column name>...]) VALUES (<value|NULL>[,<value|NULL>...])`  
 or  
 `INSERT INTO <table name> (<column name> [,<column name>...]) SELECT <column name> [,<column name>...] FROM <table name> [WHERE <colmnname>=<value|NULL>]`  
-Insert has two forms, VALUES and SELECT.  VALUES insets a single record of the givne values, SELECT inserts all the results of the given SELECT query.  
+Insert has two forms, VALUES and SELECT.  VALUES inserts a single record of the given values, SELECT inserts all the results of the given SELECT query.  
 `INTO`  a required keyword followed by the table name of where to insert the new records.  
 (col[,col...]) A required, bracketed, list of column name of where to insert the new data.  must be valid columns in the table.  
 `VALUES` or `SELECT`  Required keyword followed by the Values or select query.  
@@ -53,7 +53,7 @@ Insert has two forms, VALUES and SELECT.  VALUES insets a single record of the g
 Values should by bracketed, comma delmited list of values with the corrisponding number of elements to match the columns named in the query.  
 To insert a NULL value, use the `NULL` keyword, e.g. (1,2,NULL)  
   
-SELECT query should be a valid SELECT query  
+SELECT query should be a valid [SELECT](#SELECT) query (Without its own INTO)  
 
 
 #### UPDATE
