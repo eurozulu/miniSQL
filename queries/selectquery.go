@@ -30,98 +30,77 @@ func (q SelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 	}
 	q.Columns = cols
 
-	chResult := make(chan Result)
-	chOut := chResult
-	if q.Into != "" {
-		chOut, err = q.insertInto(ctx, db, chResult)
-		if err != nil {
-			return nil, fmt.Errorf("problem with target table  %s", err)
-		}
+	if q.Into != "" && db.ContainsTable(q.Into) {
+		return nil, fmt.Errorf("table %q already exists. Use INSERT INTO to insert into existing table", q.Into)
 	}
-	go func(sq SelectQuery, results chan<- Result) {
+
+	ch := make(chan Result)
+	go func(sq *SelectQuery, results chan<- Result) {
 		defer close(results)
-		t, _ := db.Table(q.TableName)
-		keys := sq.Where.Keys(ctx, t)
-		for {
+
+		var err error
+		if sq.Into != "" {
+			err = sq.executeSelectINTO(ctx, db, results)
+		} else {
+			err = sq.executeSelect(ctx, db, results)
+		}
+		if err != nil {
+			es := err.Error()
 			select {
 			case <-ctx.Done():
+				log.Println(err)
 				return
-			case id, ok := <-keys:
-				if !ok {
-					return
-				}
-				v, err := t.Select(id, sq.Columns)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				select {
-				case <-ctx.Done():
-					return
-				case results <- NewResult(q.TableName, v):
-				}
+			case results <- NewResult(sq.TableName, tinydb.Values{"ERROR": &es}):
 			}
 		}
-	}(q, chResult)
-	return chOut, nil
+
+	}(&q, ch)
+	return ch, nil
 }
 
-func (q SelectQuery) insertInto(ctx context.Context, db *tinydb.TinyDB, ch <-chan Result) (chan Result, error) {
-	t := q.Into
-	if db.ContainsTable(t) {
-		return nil, fmt.Errorf("table %q already exists. Use INSERT INTO to insert into existing table")
-	}
-	cols := removeColumn("_id", q.Columns)
-	err := alterTable(t, cols, db)
-	if err != nil {
-		return nil, err
+func (q SelectQuery) executeSelectINTO(ctx context.Context, db *tinydb.TinyDB, results chan<- Result) error {
+	// create the new table based on the query columns
+	cols := removeIDColumn(q.Columns)
+	if err := alterTable(q.Into, cols, db); err != nil {
+		return err
 	}
 
-	chOut := make(chan Result)
-	go func(table string, cols []string, chIn <-chan Result, chOut chan<- Result) {
-		defer close(chOut)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case r, ok := <-chIn:
-				if !ok {
-					return
-				}
-				ir, err := insertResult(ctx, db, table, cols, r.Values())
-				if err != nil {
-					e := fmt.Sprintf("inserting values  %s", err)
-					ir = NewResult(table, tinydb.Values{"ERROR": &e})
-				}
-				select {
-				case <-ctx.Done():
-					return
-				case chOut <- ir:
-				}
-				if err != nil {
-					return
-				}
-			}
-		}
-	}(t, cols, ch, chOut)
-	return chOut, nil
-}
-
-func insertResult(ctx context.Context, db *tinydb.TinyDB, table string, cols []string, values tinydb.Values) (Result, error) {
-	iq := &InsertQuery{
-		TableName: table,
+	// flip SELECT INTO, into an INSERT SELECT, removing the SELECT INTO name
+	iq := InsertQuery{
+		TableName: q.Into,
 		Columns:   cols,
-		Values:    values,
+		Select: &SelectQuery{
+			TableName: q.TableName,
+			Columns:   q.Columns,
+			Where:     q.Where,
+			Into:      "",
+		},
 	}
-	irs, err := iq.Execute(ctx, db)
-	if err != nil {
-		return nil, err
+	return iq.insertSelect(ctx, db, results)
+}
+
+func (q SelectQuery) executeSelect(ctx context.Context, db *tinydb.TinyDB, results chan<- Result) error {
+	t, _ := db.Table(q.TableName)
+	keys := q.Where.Keys(ctx, t)
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case id, ok := <-keys:
+			if !ok {
+				return nil
+			}
+			v, err := t.Select(id, q.Columns)
+			if err != nil {
+				return err
+			}
+			select {
+			case <-ctx.Done():
+				return nil
+			case results <- NewResult(q.TableName, v):
+			}
+		}
 	}
-	ir, ok := <-irs
-	if !ok {
-		return nil, fmt.Errorf("No result found for insert into %s", table)
-	}
-	return ir, nil
 }
 
 func alterTable(table string, columns []string, db *tinydb.TinyDB) error {
@@ -156,15 +135,18 @@ func expandColumnNames(t tinydb.Table, columns []string) ([]string, error) {
 	return cols, nil
 }
 
-func removeColumn(c string, columns []string) []string {
-	i := stringutil.ContainsString(c, columns)
+func removeIDColumn(cols []string) []string {
+	i := stringutil.ContainsString("_id", cols)
 	if i < 0 {
-		return columns
+		return cols
 	}
-	if i == len(columns)-1 {
-		return columns[:i]
+	if i == len(cols)-1 {
+		return cols[:i]
 	}
-	return append(columns[:i], columns[i+1:]...)
+	c := make([]string, len(cols)-1)
+	copy(c, cols[:i])
+	copy(c[i:], cols[i+1:])
+	return c
 }
 
 // NewSelectQuery creates a SelectQuery from the given string.
