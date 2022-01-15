@@ -50,7 +50,6 @@ func SplitOperator(s string) (string, operator, string) {
 		rest = strings.TrimSpace(s[i:])
 	}
 	return b4, op, rest
-
 }
 
 func (op operator) Compare(v1, v2 *string) bool {

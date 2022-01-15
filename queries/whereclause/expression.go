@@ -18,10 +18,11 @@ type Expression interface {
 	// Match will compare the named value in the expression with a value in the given values.
 	Compare(values tinydb.Values) bool
 
+	// ColumnNames gets all the Column names used in the expression
 	ColumnNames() []string
 }
 
-// OperatorExpression are expressions which alter the outcome of other expressions.
+// OperatorExpression are expressions which alter the outcome of other expressions or link two expressions together.
 // AND, NOT and OR are the three operator expressions (Not to be confused with condition operators such as =, <, >)
 type OperatorExpression interface {
 	Expression
@@ -100,11 +101,11 @@ func NewNOTOperatorExpression(s string) OperatorExpression {
 	return nil
 }
 
-// parseExpression attempts to parse the first expression from the given string.
-// The first expression will be a condition or a bracketed expression.
+// parseNextExpression attempts to parse the first expression from the given string.
+// The first expression will be a condition or a bracketed expression
 // If expression is preceded with the NOT operator, the expression will be returned wrapped in a NOT OperatorExpression
 // any string remaining after the expression is returned along with the parsed expression.
-func parseExpression(s string) (Expression, string, error) {
+func parseNextExpression(s string) (Expression, string, error) {
 	// bracketed string, treat its contents as a single expression
 	if strings.HasPrefix(s, "(") {
 		bs, rest := stringutil.BracketedString(s)
@@ -120,7 +121,7 @@ func parseExpression(s string) (Expression, string, error) {
 	not := NewNOTOperatorExpression(cmd)
 	if not != nil {
 		// parse following as an expression (may be complex, bracketed expression)
-		ex, r, err := parseExpression(rest)
+		ex, r, err := parseNextExpression(rest)
 		if err != nil {
 			return nil, rest, err
 		}
@@ -140,7 +141,7 @@ func parseExpression(s string) (Expression, string, error) {
 // ParseExpression the given string into an Expression.
 func ParseExpression(s string) (Expression, error) {
 	// must have at least one expression
-	ex, rest, err := parseExpression(s)
+	ex, rest, err := parseNextExpression(s)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +156,7 @@ func ParseExpression(s string) (Expression, error) {
 		}
 
 		// parse the following expression to add to the operator
-		e, er, err := parseExpression(r)
+		e, er, err := parseNextExpression(r)
 		if err != nil {
 			return nil, err
 		}
