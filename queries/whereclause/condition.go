@@ -1,8 +1,8 @@
 package whereclause
 
 import (
-	"eurozulu/tinydb/stringutil"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"strings"
 )
@@ -27,7 +27,7 @@ func (c condition) ColumnNames() []string {
 	return []string{c.Column}
 }
 
-func (c condition) Compare(values tinydb.Values) bool {
+func (c condition) Compare(values minisql.Values) bool {
 	v, ok := values[c.Column]
 	if !ok {
 		return false

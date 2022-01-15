@@ -1,8 +1,8 @@
 package whereclause
 
 import (
-	"eurozulu/tinydb/stringutil"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"strings"
 )
@@ -16,7 +16,7 @@ const (
 // An Expression is something that can be presented with some values and result in a boolean outcome
 type Expression interface {
 	// Match will compare the named value in the expression with a value in the given values.
-	Compare(values tinydb.Values) bool
+	Compare(values minisql.Values) bool
 
 	// ColumnNames gets all the Column names used in the expression
 	ColumnNames() []string
@@ -43,7 +43,7 @@ func (oe NotExpression) ColumnNames() []string {
 	return stringutil.UniqueStrings(oe.expression.ColumnNames())
 }
 
-func (oe NotExpression) Compare(values tinydb.Values) bool {
+func (oe NotExpression) Compare(values minisql.Values) bool {
 	return !oe.expression.Compare(values)
 }
 
@@ -61,7 +61,7 @@ func (oe AndExpression) ColumnNames() []string {
 	return stringutil.UniqueStrings(append(oe.operand.ColumnNames(), oe.expression.ColumnNames()...))
 }
 
-func (oe AndExpression) Compare(values tinydb.Values) bool {
+func (oe AndExpression) Compare(values minisql.Values) bool {
 	return oe.operand.Compare(values) && oe.expression.Compare(values)
 }
 
@@ -79,7 +79,7 @@ func (oe OrExpression) ColumnNames() []string {
 	return stringutil.UniqueStrings(append(oe.operand.ColumnNames(), oe.expression.ColumnNames()...))
 }
 
-func (oe OrExpression) Compare(values tinydb.Values) bool {
+func (oe OrExpression) Compare(values minisql.Values) bool {
 	return oe.operand.Compare(values) || oe.expression.Compare(values)
 }
 

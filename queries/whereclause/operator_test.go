@@ -1,8 +1,8 @@
 package whereclause_test
 
 import (
-	"eurozulu/tinydb/queries/whereclause"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/queries/whereclause"
 	"fmt"
 	"strings"
 	"testing"
@@ -139,7 +139,7 @@ type mockExpression struct {
 	Columns []string
 }
 
-func (m mockExpression) Compare(_ tinydb.Values) bool {
+func (m mockExpression) Compare(_ minisql.Values) bool {
 	return m.Result
 }
 

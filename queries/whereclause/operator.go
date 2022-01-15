@@ -1,7 +1,7 @@
 package whereclause
 
 import (
-	"eurozulu/tinydb/stringutil"
+	"eurozulu/miniSQL/stringutil"
 	"log"
 	"math"
 	"regexp"

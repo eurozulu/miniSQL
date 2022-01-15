@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
 	"fmt"
 	"io"
 	"os"
@@ -20,7 +20,7 @@ func DumpCommand(cmd string, out io.Writer) error {
 	if path.Ext(cmd) == "" {
 		cmd = strings.Join([]string{cmd, "json"}, ".")
 	}
-	if err := tinydb.Dump(cmd, Database); err != nil {
+	if err := minisql.Dump(cmd, Database); err != nil {
 		return err
 	}
 	Prompt = dbName(cmd) + ">"
@@ -34,10 +34,10 @@ func RestoreCommand(cmd string, out io.Writer) error {
 	}
 
 	tc := len(Database.TableNames())
-	if err := tinydb.Restore(cmd, Database); err != nil {
+	if err := minisql.Restore(cmd, Database); err != nil {
 		if path.Ext(cmd) == "" && os.IsNotExist(err) {
 			// not exists without extentions, try again with json extension
-			err = tinydb.Restore(strings.Join([]string{cmd, "json"}, "."), Database)
+			err = minisql.Restore(strings.Join([]string{cmd, "json"}, "."), Database)
 		}
 		if err != nil {
 			return err

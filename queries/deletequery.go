@@ -2,9 +2,9 @@ package queries
 
 import (
 	"context"
-	"eurozulu/tinydb/queries/whereclause"
-	"eurozulu/tinydb/stringutil"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/queries/whereclause"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,7 +15,7 @@ type DeleteQuery struct {
 	Where     whereclause.WhereClause
 }
 
-func (q DeleteQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
+func (q DeleteQuery) Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Result, error) {
 	if !db.ContainsTable(q.TableName) {
 		return nil, fmt.Errorf("%q is not a known table", q.TableName)
 	}
@@ -23,7 +23,7 @@ func (q DeleteQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 	go func(q *DeleteQuery, ch chan<- Result) {
 		defer close(ch)
 		t, _ := db.Table(q.TableName)
-		var keys []tinydb.Key
+		var keys []minisql.Key
 		for k := range q.Where.Keys(ctx, t) {
 			keys = append(keys, k)
 		}
@@ -32,7 +32,7 @@ func (q DeleteQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 		select {
 		case <-ctx.Done():
 			return
-		case ch <- NewResult(q.TableName, tinydb.Values{"deleted": &ks}):
+		case ch <- NewResult(q.TableName, minisql.Values{"deleted": &ks}):
 		}
 	}(&q, ch)
 	return ch, nil

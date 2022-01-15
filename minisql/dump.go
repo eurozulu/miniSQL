@@ -1,4 +1,4 @@
-package tinydb
+package minisql
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func Dump(filename string, tdb *TinyDB) error {
+func Dump(filename string, tdb *MiniDB) error {
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
@@ -20,7 +20,7 @@ func Dump(filename string, tdb *TinyDB) error {
 	return json.NewEncoder(f).Encode(&tdb.tables)
 }
 
-func Restore(filename string, tdb *TinyDB) error {
+func Restore(filename string, tdb *MiniDB) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		return err

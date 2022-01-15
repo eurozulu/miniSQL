@@ -2,9 +2,9 @@ package queries
 
 import (
 	"context"
-	"eurozulu/tinydb/queries/whereclause"
-	"eurozulu/tinydb/stringutil"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/queries/whereclause"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,11 +12,11 @@ import (
 
 type UpdateQuery struct {
 	TableName string
-	Values    tinydb.Values
+	Values    minisql.Values
 	Where     whereclause.WhereClause
 }
 
-func (q UpdateQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
+func (q UpdateQuery) Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Result, error) {
 	if !db.ContainsTable(q.TableName) {
 		return nil, fmt.Errorf("%q is not a known table", q.TableName)
 	}
@@ -45,15 +45,15 @@ func (q UpdateQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 	return ch, nil
 }
 
-func (q UpdateQuery) updateRow(k tinydb.Key, t tinydb.Table) Result {
-	var v tinydb.Values
+func (q UpdateQuery) updateRow(k minisql.Key, t minisql.Table) Result {
+	var v minisql.Values
 	err := t.Update(k, q.Values)
 	if err != nil {
 		errs := err.Error()
-		v = tinydb.Values{"ERROR": &errs}
+		v = minisql.Values{"ERROR": &errs}
 	} else {
 		id := strconv.Itoa(int(k))
-		v = tinydb.Values{"_id": &id}
+		v = minisql.Values{"_id": &id}
 	}
 	return NewResult(q.TableName, v)
 }
@@ -83,7 +83,7 @@ func NewUpdateQuery(q string) (*UpdateQuery, error) {
 		where = w
 		rest = rest[:wi]
 	}
-	vals := tinydb.Values{}
+	vals := minisql.Values{}
 	sets := strings.Split(rest, ",")
 	for _, s := range sets {
 		ss := strings.SplitN(s, "=", 2)

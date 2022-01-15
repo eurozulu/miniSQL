@@ -1,4 +1,4 @@
-package tinydb
+package minisql
 
 import (
 	"encoding/json"

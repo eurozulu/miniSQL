@@ -1,8 +1,8 @@
 package whereclause_test
 
 import (
-	"eurozulu/tinydb/queries/whereclause"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/queries/whereclause"
 	"strings"
 	"testing"
 )
@@ -131,7 +131,7 @@ func TestCondition_Compare(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected exception for condition  %v", err)
 	}
-	expected := tinydb.Values{"A": &val}
+	expected := minisql.Values{"A": &val}
 	if !c.Compare(expected) {
 		t.Fatalf("unexpected false comapre with true values provided")
 	}
@@ -155,7 +155,7 @@ func TestCondition_Compare(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected exception for condition  %v", err)
 	}
-	expected = tinydb.Values{"A": nil, "B": nil}
+	expected = minisql.Values{"A": nil, "B": nil}
 	if !c.Compare(expected) {
 		t.Fatalf("unexpected false when comapring with = NULL")
 	}

@@ -1,16 +1,16 @@
-# TinyDb
+# MiniSQL
 ## A simple, memory based, SQL database with a tiny footprint.  
 
 Aimed at getting SQL functionality when a full blown RDB is unsuitable.  
 With an executable under 3 Mb, this tiny little database performs many of the basic tasks of its far larger counterparts.  
 
 ### Usage  
-TinyDb has its own command line interface (CLI) to interact with the user.  
+MiniSQL has its own command line interface (CLI) to interact with the user.  
 The CLI shows a `>` prompt, where commands may be typed.  
 The name of the last loaded database, if any, will appear before the prompt.  
 
 To start the CLI, type:  
-`tinydb`  
+`minisql`  
 from the (OS) command line.  
 
 At the `>` prompt type any SQL command to create new tables and insert data into them.  

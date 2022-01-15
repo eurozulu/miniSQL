@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"eurozulu/tinydb/stringutil"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"io"
 	"strings"
@@ -52,7 +52,7 @@ func dropCommand(cmd string, out io.Writer) error {
 }
 
 func createTable(cmd string, out io.Writer) error {
-	sc, err := tinydb.NewSchema(cmd)
+	sc, err := minisql.NewSchema(cmd)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func createTable(cmd string, out io.Writer) error {
 }
 
 func createColumn(cmd string, out io.Writer) error {
-	sc, err := tinydb.NewSchema(cmd)
+	sc, err := minisql.NewSchema(cmd)
 	if err != nil {
 		return err
 	}
@@ -85,13 +85,13 @@ func dropTable(tableName string, out io.Writer) error {
 	if !Database.ContainsTable(tableName) {
 		return fmt.Errorf("%q is not a known table", tableName)
 	}
-	Database.AlterDatabase(tinydb.Schema{tableName: nil})
+	Database.AlterDatabase(minisql.Schema{tableName: nil})
 	_, err := fmt.Fprintf(out, "table %s dropped\n", tableName)
 	return err
 }
 
 func dropColumn(cmd string, out io.Writer) error {
-	sc, err := tinydb.NewSchema(cmd)
+	sc, err := minisql.NewSchema(cmd)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func dropDatabase(cmd string, out io.Writer) error {
 	if cmd == "" || tbs[0] == "" {
 		tbs = Database.TableNames()
 	}
-	sc, err := tinydb.NewSchemaFromTables(Database, tbs...)
+	sc, err := minisql.NewSchemaFromTables(Database, tbs...)
 	if err != nil {
 		return err
 	}

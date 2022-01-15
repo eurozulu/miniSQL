@@ -1,7 +1,7 @@
 package queries
 
 import (
-	"eurozulu/tinydb/stringutil"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"strings"
 )

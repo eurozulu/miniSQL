@@ -2,9 +2,9 @@ package queries
 
 import (
 	"context"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
 )
 
 type Query interface {
-	Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error)
+	Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Result, error)
 }

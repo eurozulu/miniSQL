@@ -2,9 +2,9 @@ package commands
 
 import (
 	"context"
-	"eurozulu/tinydb/queries"
-	"eurozulu/tinydb/queries/whereclause"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/queries"
+	"eurozulu/miniSQL/queries/whereclause"
 	"fmt"
 	"io"
 	"sort"
@@ -34,7 +34,7 @@ func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	result := map[string][]tinydb.Values{}
+	result := map[string][]minisql.Values{}
 	for r := range rCh {
 		result[r.TableName()] = append(result[r.TableName()], r.Values())
 	}
@@ -58,7 +58,7 @@ func queryCommand(ctx context.Context, cmd string, out io.Writer) error {
 	return nil
 }
 
-func orderedColumnNames(values tinydb.Values) []string {
+func orderedColumnNames(values minisql.Values) []string {
 	keys := make([]string, len(values))
 	var i int
 	for k := range values {
@@ -73,7 +73,7 @@ func orderedColumnNames(values tinydb.Values) []string {
 	return keys
 }
 
-func orderedColumnValues(cols []string, out io.Writer, values []tinydb.Values) {
+func orderedColumnValues(cols []string, out io.Writer, values []minisql.Values) {
 	for _, v := range values {
 		for _, c := range cols {
 			fmt.Fprintf(out, "%s\t", valueString(v[c]))

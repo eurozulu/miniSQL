@@ -1,8 +1,8 @@
-package tinydb
+package minisql
 
 import (
 	"encoding/json"
-	"eurozulu/tinydb/stringutil"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"io"
 	"log"
@@ -42,7 +42,7 @@ func LoadSchema(filepath string) (Schema, error) {
 	return sc, nil
 }
 
-func NewSchemaFromTables(db *TinyDB, tableName ...string) (Schema, error) {
+func NewSchemaFromTables(db *MiniDB, tableName ...string) (Schema, error) {
 	if len(tableName) == 0 {
 		return nil, fmt.Errorf("must proive at least one table to generate schema from")
 	}

@@ -2,8 +2,8 @@ package queries
 
 import (
 	"context"
-	"eurozulu/tinydb/stringutil"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"log"
 	"strings"
@@ -12,11 +12,11 @@ import (
 type InsertQuery struct {
 	TableName string
 	Columns   []string
-	Values    tinydb.Values
+	Values    minisql.Values
 	Select    *SelectQuery
 }
 
-func (q InsertQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
+func (q InsertQuery) Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Result, error) {
 	// perform sanity checks on query before starting execution
 	t, err := db.Table(q.TableName)
 	if err != nil {
@@ -29,7 +29,7 @@ func (q InsertQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 	q.Columns = cols
 	ch := make(chan Result)
 
-	go func(db *tinydb.TinyDB, sq *InsertQuery, results chan<- Result) {
+	go func(db *minisql.MiniDB, sq *InsertQuery, results chan<- Result) {
 		defer close(results)
 		if sq.Values != nil {
 			err = sq.insertValues(ctx, db, results, sq.Values)
@@ -46,14 +46,14 @@ func (q InsertQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 			case <-ctx.Done():
 				log.Println(err)
 				return
-			case results <- NewResult(sq.TableName, tinydb.Values{"ERROR": &es}):
+			case results <- NewResult(sq.TableName, minisql.Values{"ERROR": &es}):
 			}
 		}
 	}(db, &q, ch)
 	return ch, nil
 }
 
-func (q InsertQuery) insertSelect(ctx context.Context, db *tinydb.TinyDB, results chan<- Result) error {
+func (q InsertQuery) insertSelect(ctx context.Context, db *minisql.MiniDB, results chan<- Result) error {
 	// use sub context to cancel select if error encountered
 	subCtx, cnl := context.WithCancel(ctx)
 	defer cnl()
@@ -72,7 +72,7 @@ func (q InsertQuery) insertSelect(ctx context.Context, db *tinydb.TinyDB, result
 	return nil
 }
 
-func (q InsertQuery) insertValues(ctx context.Context, db *tinydb.TinyDB, results chan<- Result, values tinydb.Values) error {
+func (q InsertQuery) insertValues(ctx context.Context, db *minisql.MiniDB, results chan<- Result, values minisql.Values) error {
 	t, _ := db.Table(q.TableName)
 	if len(q.Columns) != len(values) {
 		return fmt.Errorf("columns / values count mismatch")
@@ -85,16 +85,16 @@ func (q InsertQuery) insertValues(ctx context.Context, db *tinydb.TinyDB, result
 	select {
 	case <-ctx.Done():
 		break
-	case results <- NewResult(q.TableName, tinydb.Values{"inserted": &idp}):
+	case results <- NewResult(q.TableName, minisql.Values{"inserted": &idp}):
 	}
 	return nil
 }
 
-func valuesList(keys []string, vals []string) (tinydb.Values, error) {
+func valuesList(keys []string, vals []string) (minisql.Values, error) {
 	if len(keys) != len(vals) {
 		return nil, fmt.Errorf("columns / values count mismatch")
 	}
-	vm := tinydb.Values{}
+	vm := minisql.Values{}
 	for i, k := range keys {
 		vs := strings.Trim(vals[i], "'")
 		vm[k] = &vs

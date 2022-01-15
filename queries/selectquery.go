@@ -2,13 +2,13 @@ package queries
 
 import (
 	"context"
-	"eurozulu/tinydb/queries/whereclause"
-	"eurozulu/tinydb/stringutil"
+	"eurozulu/miniSQL/queries/whereclause"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"log"
 	"strings"
 
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
 )
 
 type SelectQuery struct {
@@ -18,7 +18,7 @@ type SelectQuery struct {
 	Into      string
 }
 
-func (q SelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Result, error) {
+func (q SelectQuery) Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Result, error) {
 	t, err := db.Table(q.TableName)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (q SelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 			case <-ctx.Done():
 				log.Println(err)
 				return
-			case results <- NewResult(sq.TableName, tinydb.Values{"ERROR": &es}):
+			case results <- NewResult(sq.TableName, minisql.Values{"ERROR": &es}):
 			}
 		}
 
@@ -58,7 +58,7 @@ func (q SelectQuery) Execute(ctx context.Context, db *tinydb.TinyDB) (<-chan Res
 	return ch, nil
 }
 
-func (q SelectQuery) executeSelectINTO(ctx context.Context, db *tinydb.TinyDB, results chan<- Result) error {
+func (q SelectQuery) executeSelectINTO(ctx context.Context, db *minisql.MiniDB, results chan<- Result) error {
 	// create the new table based on the query columns
 	cols := removeIDColumn(q.Columns)
 	if err := alterTable(q.Into, cols, db); err != nil {
@@ -79,7 +79,7 @@ func (q SelectQuery) executeSelectINTO(ctx context.Context, db *tinydb.TinyDB, r
 	return iq.insertSelect(ctx, db, results)
 }
 
-func (q SelectQuery) executeSelect(ctx context.Context, db *tinydb.TinyDB, results chan<- Result) error {
+func (q SelectQuery) executeSelect(ctx context.Context, db *minisql.MiniDB, results chan<- Result) error {
 	t, _ := db.Table(q.TableName)
 	keys := q.Where.Keys(ctx, t)
 	for {
@@ -103,12 +103,12 @@ func (q SelectQuery) executeSelect(ctx context.Context, db *tinydb.TinyDB, resul
 	}
 }
 
-func alterTable(table string, columns []string, db *tinydb.TinyDB) error {
+func alterTable(table string, columns []string, db *minisql.MiniDB) error {
 	cols := map[string]bool{}
 	for _, c := range columns {
 		cols[c] = true
 	}
-	db.AlterDatabase(tinydb.Schema{
+	db.AlterDatabase(minisql.Schema{
 		table: cols,
 	})
 	return nil
@@ -116,7 +116,7 @@ func alterTable(table string, columns []string, db *tinydb.TinyDB) error {
 
 // expandColumnNames expands the given list of column names and validates the given list as known names.
 // columns may contain "*" wild card to indicate all column names.
-func expandColumnNames(t tinydb.Table, columns []string) ([]string, error) {
+func expandColumnNames(t minisql.Table, columns []string) ([]string, error) {
 	tcols := t.ColumnNames()
 	if len(columns) == 0 {
 		return tcols, nil

@@ -1,4 +1,4 @@
-package tinydb
+package minisql
 
 import (
 	"fmt"
@@ -6,11 +6,11 @@ import (
 
 type Key int64
 
-type TinyDB struct {
+type MiniDB struct {
 	tables map[string]Table
 }
 
-func (db TinyDB) TableNames() []string {
+func (db MiniDB) TableNames() []string {
 	names := make([]string, len(db.tables))
 	var i int
 	for tn := range db.tables {
@@ -20,12 +20,12 @@ func (db TinyDB) TableNames() []string {
 	return names
 }
 
-func (db TinyDB) ContainsTable(tablename string) bool {
+func (db MiniDB) ContainsTable(tablename string) bool {
 	_, ok := db.tables[tablename]
 	return ok
 }
 
-func (db TinyDB) Table(tablename string) (Table, error) {
+func (db MiniDB) Table(tablename string) (Table, error) {
 	t, ok := db.tables[tablename]
 	if !ok {
 		return nil, fmt.Errorf("%q is not a known table", tablename)
@@ -33,7 +33,7 @@ func (db TinyDB) Table(tablename string) (Table, error) {
 	return t, nil
 }
 
-func (db TinyDB) Describe(tablename string) ([]string, error) {
+func (db MiniDB) Describe(tablename string) ([]string, error) {
 	t, ok := db.tables[tablename]
 	if !ok {
 		return nil, fmt.Errorf("%s is an unknown table", tablename)
@@ -41,7 +41,7 @@ func (db TinyDB) Describe(tablename string) ([]string, error) {
 	return t.ColumnNames(), nil
 }
 
-func (db *TinyDB) AlterDatabase(schema Schema) {
+func (db *MiniDB) AlterDatabase(schema Schema) {
 	for tn, cols := range schema {
 		if len(cols) == 0 {
 			// drop table with no columns
@@ -62,8 +62,8 @@ func (db *TinyDB) AlterDatabase(schema Schema) {
 	}
 }
 
-func NewDatabase(schema Schema) *TinyDB {
-	db := &TinyDB{tables: map[string]Table{}}
+func NewDatabase(schema Schema) *MiniDB {
+	db := &MiniDB{tables: map[string]Table{}}
 	if schema != nil {
 		db.AlterDatabase(schema)
 	}

@@ -1,4 +1,4 @@
-package tinydb
+package minisql
 
 import (
 	"testing"
@@ -33,7 +33,7 @@ func TestNewDatabase(t *testing.T) {
 	}
 }
 
-func TestTinyDB_TableNames(t *testing.T) {
+func TestMiniDB_TableNames(t *testing.T) {
 	db := NewDatabase(testSchema)
 	tns := db.TableNames()
 	if len(tns) != 3 {
@@ -46,7 +46,7 @@ func TestTinyDB_TableNames(t *testing.T) {
 	}
 }
 
-func TestTinyDB_ContainsTable(t *testing.T) {
+func TestMiniDB_ContainsTable(t *testing.T) {
 	db := NewDatabase(testSchema)
 	for tn := range testSchema {
 		if !db.ContainsTable(tn) {
@@ -58,7 +58,7 @@ func TestTinyDB_ContainsTable(t *testing.T) {
 	}
 }
 
-func TestTinyDB_Describe(t *testing.T) {
+func TestMiniDB_Describe(t *testing.T) {
 	db := NewDatabase(testSchema)
 	for tn := range testSchema {
 		cns, err := db.Describe(tn)

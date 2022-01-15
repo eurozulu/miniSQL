@@ -2,8 +2,8 @@ package whereclause
 
 import (
 	"context"
-	"eurozulu/tinydb/stringutil"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
+	"eurozulu/miniSQL/stringutil"
 	"fmt"
 	"log"
 	"strings"
@@ -23,23 +23,23 @@ const keyBuffer = 255
 // e.g. mycolumn != 'some value' AND _id <= 22
 type WhereClause interface {
 	// Keys returns a channel of all the keys in the given table, which match the where clause.
-	Keys(ctx context.Context, t tinydb.Table) <-chan tinydb.Key
+	Keys(ctx context.Context, t minisql.Table) <-chan minisql.Key
 }
 
 type whereClause struct {
 	expression Expression
 }
 
-func (wc whereClause) Keys(ctx context.Context, t tinydb.Table) <-chan tinydb.Key {
-	ch := make(chan tinydb.Key, keyBuffer)
-	go func(ch chan<- tinydb.Key) {
+func (wc whereClause) Keys(ctx context.Context, t minisql.Table) <-chan minisql.Key {
+	ch := make(chan minisql.Key, keyBuffer)
+	go func(ch chan<- minisql.Key) {
 		defer close(ch)
 		last := t.NextID()
 		var cols []string
 		if wc.HasExpression() {
 			cols = wc.expression.ColumnNames()
 		}
-		for k := tinydb.Key(0); k < last; k++ {
+		for k := minisql.Key(0); k < last; k++ {
 			if !t.ContainsID(k) {
 				continue
 			}

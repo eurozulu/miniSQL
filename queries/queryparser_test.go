@@ -2,12 +2,12 @@ package queries
 
 import (
 	"context"
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
 	"reflect"
 	"testing"
 )
 
-var testSchema = tinydb.Schema{
+var testSchema = minisql.Schema{
 	"t1": {
 		"c1-1": true,
 		"c1-2": true,
@@ -34,7 +34,7 @@ func TestQueryParser_ParseInsertValues(t *testing.T) {
 	if _, ok := q.(*InsertQuery); !ok {
 		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*InsertQuery", reflect.TypeOf(q).Elem().Name())
 	}
-	tdb := tinydb.NewDatabase(testSchema)
+	tdb := minisql.NewDatabase(testSchema)
 	rCh, err := q.Execute(context.TODO(), tdb)
 	if err != nil {
 		t.Fatalf("failed to execute query %s", err)
@@ -68,7 +68,7 @@ func TestQueryParser_ParseSelect(t *testing.T) {
 	if _, ok := q.(*SelectQuery); !ok {
 		t.Fatalf("unexpected query type found.  Expected %s, found %s", "*SelectQuery", reflect.TypeOf(q).Elem().Name())
 	}
-	tdb := tinydb.NewDatabase(testSchema)
+	tdb := minisql.NewDatabase(testSchema)
 	_, err = q.Execute(context.TODO(), tdb)
 	if err != nil {
 		t.Fatalf("failed to execute query %s", err)

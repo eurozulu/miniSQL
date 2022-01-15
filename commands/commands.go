@@ -9,13 +9,13 @@ import (
 	"os"
 	"strings"
 
-	"eurozulu/tinydb/tinydb"
+	"eurozulu/miniSQL/minisql"
 	"github.com/eurozulu/commandline"
 )
 
-const historyLocation = "$HOME/.tinydb_history"
+const historyLocation = "$HOME/.minisql_history"
 
-var Database *tinydb.TinyDB
+var Database *minisql.MiniDB
 var Prompt = ">"
 var exitError = fmt.Errorf("exiting")
 

@@ -1,4 +1,4 @@
-module eurozulu/tinydb
+module eurozulu/miniSQL
 
 go 1.17
 
