@@ -38,7 +38,7 @@ Supported queries are:
 `SELECT <column name> [,<column name>...] [INTO <table name>] FROM <table name> [WHERE <colmnname>=<value|NULL>]`  
 Column names should be columns in the named table.  Use wildcard `*` to select all columns  
 INTO is an optional name of a new table to insert the results into.  The table must NOT exist.  
-FROM is a required keyword followed by the name of the table to select from.  Table must exist int he current database.  
+FROM is a required keyword followed by the name of the table to select from.  Table must exist in the current database.  
 WHERE is an optional set of filter conditions to limit the selected values.  See [Where](#WHERE)
 
 #### INSERT
