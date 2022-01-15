@@ -36,16 +36,67 @@ Supported queries are:
   
 #### SELECT  
 `SELECT <column name> [,<column name>...] [INTO <table name>] FROM <table name> [WHERE <colmnname>=<value|NULL>]`  
+Column names should be columns in the named table.  Use wildcard `*` to select all columns  
+INTO is an optional name of a new table to insert the results into.  The table must NOT exist.  
+FROM is a required keyword followed by the name of the table to select from.  Table must exist int he current database.  
+WHERE is an optional set of filter conditions to limit the selected values.  See [Where](#WHERE)
 
 #### INSERT
-`INSERT INTO <table name> (<column name> [,<column name>...]) VALUES (<value|NULL>[,<value|NULL>...])`   
+`INSERT INTO <table name> (<column name> [,<column name>...]) VALUES (<value|NULL>[,<value|NULL>...])`  
+or  
+`INSERT INTO <table name> (<column name> [,<column name>...]) SELECT <column name> [,<column name>...] FROM <table name> [WHERE <colmnname>=<value|NULL>]`  
+Insert has two forms, VALUES and SELECT.  VALUES insets a single record of the givne values, SELECT inserts all the results of the given SELECT query.  
+`INTO`  a required keyword followed by the table name of where to insert the new records.  
+(col[,col...]) A required, bracketed, list of column name of where to insert the new data.  must be valid columns in the table.  
+`VALUES` or `SELECT`  Required keyword followed by the Values or select query.  
+
+Values should by bracketed, comma delmited list of values with the corrisponding number of elements to match the columns named in the query.  
+To insert a NULL value, use the `NULL` keyword, e.g. (1,2,NULL)  
+  
+SELECT query should be a valid SELECT query  
+
 
 #### UPDATE
 `UPDATE <table name> SET <colmnname>=<value|NULL> [,<colmnname>=<value|NULL>...] [WHERE <colmnname>=<value|NULL>]`  
+Update changes values of an existing record.  
+`<table name>` a required name of an existing table.  
+`SET` a required keyword followed by one or more assignments.  
+assignments are a column name and a value, seperated with an '='  
+additional assignments can be listed using a comma delimiter.  
+.e.g.  `SET mycol = 1, myothercol = 'haha'`  
+WHERE is an optional set of filter conditions to limit the updated values.  See [Where](#WHERE)
+
 
 #### DELETE
 `DELETE FROM <table name> [WHERE <colmnname>=<value|NULL>]`  
+Deletes records from the table.  
+`FROM` a required keyword, followed by the table name to delete from.  
+WHERE is an optional set of filter conditions to limit the deleted values.  See [Where](#WHERE)
+
+
+####WHERE  
+The Where clause is used to filter results in SELECT, UPDATE or DELETE.  
+Where consists of one or more 'conditions', linked using operators `AND` or `OR`.  
+Each condition begins with a column name followed by an operator, followed by the comparison value.  
+e.g. `mycol = 'haha'` or `mycol <= 3 AND myothercol != NULL`  
   
+Supported operators are:  
+* `=`
+* '!=' or '<>'
+* '>='
+* '<='
+* '>'
+* '<'
+* 'LIKE'
+* 'BETWEEN' *not yet supported  
+  
+Conditions may be preceeded with `NOT` to invert the condition outcome.  
+e.g. `NOT mycol = 'haha'` or `mycol <= 3 AND NOT myothercol = NULL`  
+  
+Conditions may use brackets to define complex conditions.  
+e.g. `(col1 = true OR col2 = true) AND col3 > 0`  
+Where the bracketed conditions are evaluated as a single result, prior to the condition outside the brackets.  
+
 ### Commands
 Supported commands to manipulate the database schema are:  
 * CREATE
