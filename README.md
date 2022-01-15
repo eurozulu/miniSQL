@@ -74,7 +74,7 @@ Deletes records from the table.
 WHERE is an optional set of filter conditions to limit the deleted values.  See [Where](#WHERE)
 
 
-####WHERE  
+#### WHERE  
 The Where clause is used to filter results in SELECT, UPDATE or DELETE.  
 Where consists of one or more 'conditions', linked using operators `AND` or `OR`.  
 Each condition begins with a column name followed by an operator, followed by the comparison value.  
