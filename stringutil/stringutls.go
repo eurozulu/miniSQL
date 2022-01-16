@@ -18,6 +18,14 @@ func FirstWord(s string) (w string, rest string) {
 	return ss[0], strings.TrimSpace(strings.Join(ss[1:], ""))
 }
 
+func LastWord(s string) (before string, w string) {
+	i := strings.LastIndex(s, " ")
+	if i < 0 || i == len(s)-1 {
+		return before, ""
+	}
+	return strings.TrimSpace(s[:i]), s[i+1:]
+}
+
 // BracketedString finds the first string enclosed in brackets.
 // if given string starts with a bracket, the result will contain all the string enclosed between that opening bracket and its corrisponding closing bracket.
 // Any string after the closing bracket is returned in rest.
@@ -121,14 +129,6 @@ func firstQuoteIndex(s string) int {
 		return dqi
 	}
 	return sqi
-}
-
-// TODO: convert to use strings.Compare()
-func StringGreaterThat(s1, s2 string) bool {
-	return strings.Compare(s1, s2) > 0
-}
-func StringLessThat(s1, s2 string) bool {
-	return strings.Compare(s1, s2) < 0
 }
 
 func UniqueStrings(ss []string) []string {

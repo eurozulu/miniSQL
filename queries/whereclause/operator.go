@@ -1,29 +1,28 @@
 package whereclause
 
 import (
-	"eurozulu/miniSQL/stringutil"
 	"log"
 	"math"
 	"regexp"
 	"strings"
 )
 
-type operator string
+type Operator string
 
 const (
-	OP_GREATER_OR_EQUAL operator = ">="
-	OP_LESS_OR_EQUAL    operator = "<="
-	OP_NOT_EQUAL        operator = "<>"
-	OP_NOT_EQUAL_ALT    operator = "!="
-	OP_EQUAL            operator = "="
-	OP_GREATER          operator = ">"
-	OP_LESS             operator = "<"
-	OP_LIKE             operator = "LIKE"
-	OP_UNKNOWN          operator = ""
+	OP_GREATER_OR_EQUAL Operator = ">="
+	OP_LESS_OR_EQUAL    Operator = "<="
+	OP_NOT_EQUAL        Operator = "<>"
+	OP_NOT_EQUAL_ALT    Operator = "!="
+	OP_EQUAL            Operator = "="
+	OP_GREATER          Operator = ">"
+	OP_LESS             Operator = "<"
+	OP_LIKE             Operator = "LIKE"
+	OP_UNKNOWN          Operator = ""
 )
 
 // operators is a slice of all the operators
-var operators = []operator{
+var operators = []Operator{
 	OP_EQUAL,
 	OP_GREATER,
 	OP_LESS,
@@ -34,17 +33,17 @@ var operators = []operator{
 	OP_LIKE,
 }
 
-// SplitOperator splits the given string into three parts, using the first operator found as a delimiter.
-// returns the string preceeding the found operator, followed by the operator itself, and then any string following the operator.
+// SplitOperator splits the given string into three parts, using the first Operator found as a delimiter.
+// returns the string preceeding the found Operator, followed by the Operator itself, and then any string following the Operator.
 // returned strings are trimmed of any space.
-// If no operator is found returns <given string>, OP_UNKNOWN, ""
-func SplitOperator(s string) (string, operator, string) {
+// If no Operator is found returns <given string>, OP_UNKNOWN, ""
+func SplitOperator(s string) (string, Operator, string) {
 	i, op := firstOperatorIndex(s)
 	if i < 0 {
 		return s, OP_UNKNOWN, ""
 	}
 	b4 := strings.TrimSpace(s[:i])
-	i += len(op) // skip past the operator
+	i += len(op) // skip past the Operator
 	var rest string
 	if i < len(s) {
 		rest = strings.TrimSpace(s[i:])
@@ -52,7 +51,7 @@ func SplitOperator(s string) (string, operator, string) {
 	return b4, op, rest
 }
 
-func (op operator) Compare(v1, v2 *string) bool {
+func (op Operator) Compare(v1, v2 *string) bool {
 	bothNull := (v1 == nil && v2 == nil)
 	eitherNull := (v1 == nil || v2 == nil)
 	switch op {
@@ -66,34 +65,40 @@ func (op operator) Compare(v1, v2 *string) bool {
 		return *v1 == *v2
 
 	case OP_GREATER:
-		if eitherNull {
+		if bothNull {
 			return false
 		}
-		return stringutil.StringGreaterThat(*v1, *v2)
+		if eitherNull {
+			return v2 == nil
+		}
+		return strings.Compare(*v1, *v2) > 0
 
 	case OP_GREATER_OR_EQUAL:
 		if bothNull {
 			return true
 		}
 		if eitherNull {
-			return false
+			return v2 == nil
 		}
-		return *v1 == *v2 || stringutil.StringGreaterThat(*v1, *v2)
+		return *v1 == *v2 || strings.Compare(*v1, *v2) > 0
 
 	case OP_LESS:
-		if eitherNull {
+		if bothNull {
 			return false
 		}
-		return stringutil.StringLessThat(*v1, *v2)
+		if eitherNull {
+			return v1 == nil
+		}
+		return strings.Compare(*v1, *v2) < 0
 
 	case OP_LESS_OR_EQUAL:
 		if bothNull {
 			return true
 		}
 		if eitherNull {
-			return false
+			return v1 == nil
 		}
-		return *v1 == *v2 || stringutil.StringLessThat(*v1, *v2)
+		return *v1 == *v2 || strings.Compare(*v1, *v2) < 0
 
 	case OP_NOT_EQUAL, OP_NOT_EQUAL_ALT:
 		if bothNull {
@@ -115,12 +120,12 @@ func (op operator) Compare(v1, v2 *string) bool {
 		}
 		return regx.MatchString(*v1)
 	default:
-		log.Printf("%q is not a known operator\n", op)
+		log.Printf("%q is not a known Operator\n", op)
 		return false
 	}
 }
 
-func firstOperatorIndex(s string) (index int, op operator) {
+func firstOperatorIndex(s string) (index int, op Operator) {
 	index = math.MaxInt
 	op = OP_UNKNOWN
 	for _, o := range operators {
@@ -128,7 +133,7 @@ func firstOperatorIndex(s string) (index int, op operator) {
 		if i < 0 {
 			continue
 		}
-		// found before any previous or same index, but longer operator
+		// found before any previous or same index, but longer Operator
 		if i < index || (i == index && len(o) > len(op)) {
 			index = i
 			op = o

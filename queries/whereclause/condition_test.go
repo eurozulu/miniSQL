@@ -22,7 +22,7 @@ func TestCondition_Parse(t *testing.T) {
 		t.Fatalf("unexpected column name, expected %q found %q", "a", c.Column)
 	}
 	if c.Operator != whereclause.OP_EQUAL {
-		t.Fatalf("unexpected operator, expected %q, found %q", whereclause.OP_EQUAL, c.Operator)
+		t.Fatalf("unexpected Operator, expected %q, found %q", whereclause.OP_EQUAL, c.Operator)
 	}
 	if c.Value == nil {
 		t.Fatalf("unexpected nil value, expected %q", "b")
@@ -45,7 +45,7 @@ func TestCondition_Parse(t *testing.T) {
 		t.Fatalf("unexpected column name, expected %q found %q", "a", c.Column)
 	}
 	if c.Operator != whereclause.OP_EQUAL {
-		t.Fatalf("unexpected operator, expected %q, found %q", whereclause.OP_EQUAL, c.Operator)
+		t.Fatalf("unexpected Operator, expected %q, found %q", whereclause.OP_EQUAL, c.Operator)
 	}
 	if c.Value == nil {
 		t.Fatalf("unexpected nil value, expected %q", "b")
@@ -68,7 +68,7 @@ func TestCondition_Parse(t *testing.T) {
 		t.Fatalf("unexpected column name, expected %q found %q", "a", c.Column)
 	}
 	if c.Operator != whereclause.OP_NOT_EQUAL_ALT {
-		t.Fatalf("unexpected operator, expected %q, found %q", whereclause.OP_NOT_EQUAL_ALT, c.Operator)
+		t.Fatalf("unexpected Operator, expected %q, found %q", whereclause.OP_NOT_EQUAL_ALT, c.Operator)
 	}
 	if c.Value == nil {
 		t.Fatalf("unexpected nil value, expected %q", "b")
@@ -91,7 +91,7 @@ func TestCondition_Parse(t *testing.T) {
 		t.Fatalf("unexpected column name, expected %q found %q", "a", c.Column)
 	}
 	if c.Operator != whereclause.OP_NOT_EQUAL_ALT {
-		t.Fatalf("unexpected operator, expected %q, found %q", whereclause.OP_NOT_EQUAL_ALT, c.Operator)
+		t.Fatalf("unexpected Operator, expected %q, found %q", whereclause.OP_NOT_EQUAL_ALT, c.Operator)
 	}
 	if c.Value == nil {
 		t.Fatalf("unexpected nil value, expected %q", "b")
@@ -112,8 +112,8 @@ func TestCondition_Parse(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected exception for invalid condition %q", "a 'haha'")
 	}
-	if !strings.Contains(err.Error(), "no operator found") {
-		t.Fatalf("unexpected exception for invalid condition %q.  Expected %q, found %q", "a 'haha'", "no operator found", err)
+	if !strings.Contains(err.Error(), "no Operator found") {
+		t.Fatalf("unexpected exception for invalid condition %q.  Expected %q, found %q", "a 'haha'", "no Operator found", err)
 	}
 
 	c, rest, err = whereclause.ParseCondition("a != ")

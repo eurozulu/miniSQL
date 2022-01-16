@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-// condition is a single evaluation of a named column, an operator and a comparison value.
+// condition is a single evaluation of a named column, an Operator and a comparison value.
 // e.g. mycol = 'hello world'  or _id > 234
 type condition struct {
 	Column   string
-	Operator operator
+	Operator Operator
 	Value    *string
 }
 
@@ -38,7 +38,7 @@ func (c condition) Compare(values minisql.Values) bool {
 func ParseCondition(q string) (*condition, string, error) {
 	col, op, rest := SplitOperator(q)
 	if op == OP_UNKNOWN {
-		return nil, q, fmt.Errorf("no operator found in condition %q", q)
+		return nil, q, fmt.Errorf("no Operator found in condition %q", q)
 	}
 	if col == "" {
 		return nil, q, fmt.Errorf("missing condition column name before '%s %s'", op, rest)

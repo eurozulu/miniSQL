@@ -16,6 +16,7 @@ type SelectQuery struct {
 	Columns   []string
 	Where     whereclause.WhereClause
 	Into      string
+	OrderBy   *sortedResult
 }
 
 func (q SelectQuery) Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Result, error) {
@@ -35,6 +36,10 @@ func (q SelectQuery) Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Re
 	}
 
 	ch := make(chan Result)
+	var chOut <-chan Result = ch
+	if q.OrderBy != nil {
+		chOut = q.OrderBy.Sort(ctx, ch)
+	}
 	go func(sq *SelectQuery, results chan<- Result) {
 		defer close(results)
 
@@ -55,7 +60,7 @@ func (q SelectQuery) Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Re
 		}
 
 	}(&q, ch)
-	return ch, nil
+	return chOut, nil
 }
 
 func (q SelectQuery) executeSelectINTO(ctx context.Context, db *minisql.MiniDB, results chan<- Result) error {
@@ -177,6 +182,16 @@ func NewSelectQuery(query string) (*SelectQuery, error) {
 		return nil, fmt.Errorf("no table name given")
 	}
 
+	var order *sortedResult
+	if i := strings.Index(strings.ToUpper(rest), "ORDER"); i >= 0 {
+		ob, err := newSortedResult(rest[i:])
+		if err != nil {
+			return nil, err
+		}
+		order = ob
+		rest = strings.TrimSpace(rest[:i])
+	}
+
 	where, err := whereclause.NewWhere(rest)
 	if err != nil {
 		return nil, err
@@ -186,5 +201,6 @@ func NewSelectQuery(query string) (*SelectQuery, error) {
 		Columns:   cols,
 		Where:     where,
 		Into:      into,
+		OrderBy:   order,
 	}, nil
 }

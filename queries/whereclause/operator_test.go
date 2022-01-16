@@ -35,24 +35,24 @@ func TestOperator_SplitOperator(t *testing.T) {
 	test = []string{"one", ".", "1"}
 	k, o, v := whereclause.SplitOperator(strings.Join(test, ""))
 	if k != strings.Join(test, "") {
-		t.Fatalf("unexpoected value on non operator epected %q, found %q", strings.Join(test, ""), k)
+		t.Fatalf("unexpoected value on non Operator epected %q, found %q", strings.Join(test, ""), k)
 	}
 	if o != whereclause.OP_UNKNOWN {
-		t.Fatalf("unexpoected value on non operator epected %q, found %q", whereclause.OP_UNKNOWN, o)
+		t.Fatalf("unexpoected value on non Operator epected %q, found %q", whereclause.OP_UNKNOWN, o)
 	}
 	if v != "" {
-		t.Fatalf("unexpoected value on non operator epected empty string, found %q", v)
+		t.Fatalf("unexpoected value on non Operator epected empty string, found %q", v)
 	}
 
 	k, o, v = whereclause.SplitOperator("")
 	if k != "" {
-		t.Fatalf("unexpoected value on non operator epected emptry string, found %q", k)
+		t.Fatalf("unexpoected value on non Operator epected emptry string, found %q", k)
 	}
 	if o != whereclause.OP_UNKNOWN {
-		t.Fatalf("unexpoected value on non operator epected %q, found %q", whereclause.OP_UNKNOWN, o)
+		t.Fatalf("unexpoected value on non Operator epected %q, found %q", whereclause.OP_UNKNOWN, o)
 	}
 	if v != "" {
-		t.Fatalf("unexpoected value on non operator epected empty string, found %q", v)
+		t.Fatalf("unexpoected value on non Operator epected empty string, found %q", v)
 	}
 
 }
@@ -110,7 +110,7 @@ func testSplit(vals []string) error {
 		return fmt.Errorf("unexpected column name. expected %q, found %q", vals[0], k)
 	}
 	if string(o) != strings.TrimSpace(vals[1]) {
-		return fmt.Errorf("unexpected operator. expected %q, found %q", vals[1], o)
+		return fmt.Errorf("unexpected Operator. expected %q, found %q", vals[1], o)
 	}
 	if v != strings.TrimSpace(vals[2]) {
 		return fmt.Errorf("unexpected value. expected %q, found %q", vals[2], v)

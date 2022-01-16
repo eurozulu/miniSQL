@@ -23,10 +23,10 @@ type Expression interface {
 }
 
 // OperatorExpression are expressions which alter the outcome of other expressions or link two expressions together.
-// AND, NOT and OR are the three operator expressions (Not to be confused with condition operators such as =, <, >)
+// AND, NOT and OR are the three Operator expressions (Not to be confused with condition operators such as =, <, >)
 type OperatorExpression interface {
 	Expression
-	// SetExpression sets the expression this operator should act on
+	// SetExpression sets the expression this Operator should act on
 	SetExpression(ex Expression)
 }
 
@@ -103,7 +103,7 @@ func NewNOTOperatorExpression(s string) OperatorExpression {
 
 // parseNextExpression attempts to parse the first expression from the given string.
 // The first expression will be a condition or a bracketed expression
-// If expression is preceded with the NOT operator, the expression will be returned wrapped in a NOT OperatorExpression
+// If expression is preceded with the NOT Operator, the expression will be returned wrapped in a NOT OperatorExpression
 // any string remaining after the expression is returned along with the parsed expression.
 func parseNextExpression(s string) (Expression, string, error) {
 	// bracketed string, treat its contents as a single expression
@@ -148,14 +148,14 @@ func ParseExpression(s string) (Expression, error) {
 	rest = strings.TrimSpace(rest)
 	// further expressions must be delimited with operators OR or AND
 	for len(rest) > 0 {
-		// parse joining operator (AND/OR), using previously parsed expression as its operand
+		// parse joining Operator (AND/OR), using previously parsed expression as its operand
 		cmd, r := stringutil.FirstWord(rest)
 		op := NewOperatorExpression(cmd, ex)
 		if op == nil {
 			return nil, fmt.Errorf("unexpected %q after expression. Expected 'OR' or 'AND'", cmd)
 		}
 
-		// parse the following expression to add to the operator
+		// parse the following expression to add to the Operator
 		e, er, err := parseNextExpression(r)
 		if err != nil {
 			return nil, err

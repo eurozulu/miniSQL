@@ -17,7 +17,7 @@ const (
 const keyBuffer = 255
 
 // WhereClause is an optional filter to limit the results of a query.
-// Clause consists of at least one 'condition', a named column and a value, seperated with an operator.
+// Clause consists of at least one 'condition', a named column and a value, seperated with an Operator.
 // e.g. mycolumn != 'some value'
 // additional conditions may be added using the operators AND or OR.
 // e.g. mycolumn != 'some value' AND _id <= 22
