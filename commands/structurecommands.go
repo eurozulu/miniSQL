@@ -109,7 +109,7 @@ func dropColumn(cmd string, out io.Writer) error {
 	}
 	var colNames []string
 	for k := range sc[tn] {
-		if stringutil.ContainsString(k, cols) < 0 {
+		if !stringutil.Contains(k, cols) {
 			return fmt.Errorf("%q is not a known column in table %s", k, tn)
 		}
 		colNames = append(colNames, k)

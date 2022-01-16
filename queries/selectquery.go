@@ -14,6 +14,7 @@ import (
 type SelectQuery struct {
 	TableName string
 	Columns   []string
+	Names     []string
 	Where     whereclause.WhereClause
 	Into      string
 	OrderBy   *sortedResult
@@ -58,30 +59,8 @@ func (q SelectQuery) Execute(ctx context.Context, db *minisql.MiniDB) (<-chan Re
 			case results <- NewResult(sq.TableName, minisql.Values{"ERROR": &es}):
 			}
 		}
-
 	}(&q, ch)
 	return chOut, nil
-}
-
-func (q SelectQuery) executeSelectINTO(ctx context.Context, db *minisql.MiniDB, results chan<- Result) error {
-	// create the new table based on the query columns
-	cols := removeIDColumn(q.Columns)
-	if err := alterTable(q.Into, cols, db); err != nil {
-		return err
-	}
-
-	// flip SELECT INTO, into an INSERT SELECT, removing the SELECT INTO name
-	iq := InsertQuery{
-		TableName: q.Into,
-		Columns:   cols,
-		Select: &SelectQuery{
-			TableName: q.TableName,
-			Columns:   q.Columns,
-			Where:     q.Where,
-			Into:      "",
-		},
-	}
-	return iq.insertSelect(ctx, db, results)
 }
 
 func (q SelectQuery) executeSelect(ctx context.Context, db *minisql.MiniDB, results chan<- Result) error {
@@ -99,6 +78,7 @@ func (q SelectQuery) executeSelect(ctx context.Context, db *minisql.MiniDB, resu
 			if err != nil {
 				return err
 			}
+			v = q.nameValues(v)
 			select {
 			case <-ctx.Done():
 				return nil
@@ -108,7 +88,32 @@ func (q SelectQuery) executeSelect(ctx context.Context, db *minisql.MiniDB, resu
 	}
 }
 
-func alterTable(table string, columns []string, db *minisql.MiniDB) error {
+func (q SelectQuery) executeSelectINTO(ctx context.Context, db *minisql.MiniDB, results chan<- Result) error {
+	// create the new table based on the query columns
+	cols := removeIDColumn(q.Columns)
+	if err := createTable(q.Into, cols, db); err != nil {
+		return err
+	}
+
+	// flip SELECT INTO, into an INSERT SELECT, removing the SELECT INTO name
+	q.Into = ""
+	iq := InsertQuery{
+		TableName: q.Into,
+		Columns:   cols,
+		Select:    &q,
+	}
+	return iq.insertSelect(ctx, db, results)
+}
+
+func (q SelectQuery) nameValues(values minisql.Values) minisql.Values {
+	vals := minisql.Values{}
+	for i, col := range q.Columns {
+		vals[q.Names[i]] = values[col]
+	}
+	return vals
+}
+
+func createTable(table string, columns []string, db *minisql.MiniDB) error {
 	cols := map[string]bool{}
 	for _, c := range columns {
 		cols[c] = true
@@ -131,7 +136,7 @@ func expandColumnNames(t minisql.Table, columns []string) ([]string, error) {
 		if c == "*" {
 			cols = append(cols, tcols...)
 		} else {
-			if stringutil.ContainsString(c, tcols) < 0 {
+			if !stringutil.Contains(c, tcols) {
 				return nil, fmt.Errorf("%s is an unknown column", c)
 			}
 			cols = append(cols, c)
@@ -141,7 +146,7 @@ func expandColumnNames(t minisql.Table, columns []string) ([]string, error) {
 }
 
 func removeIDColumn(cols []string) []string {
-	i := stringutil.ContainsString("_id", cols)
+	i := stringutil.IndexOf("_id", cols)
 	if i < 0 {
 		return cols
 	}
@@ -152,6 +157,32 @@ func removeIDColumn(cols []string) []string {
 	copy(c, cols[:i])
 	copy(c[i:], cols[i+1:])
 	return c
+}
+
+func parseColumnNames(q string) ([]string, []string, error) {
+	cols := stringutil.SplitTrim(q, ",")
+	names := make([]string, len(cols))
+
+	for i, c := range cols {
+		n := c
+		if strings.Contains(c, " ") {
+			col, rest := stringutil.FirstWord(c)
+			as, name := stringutil.FirstWord(rest)
+			if !strings.EqualFold(as, "AS") {
+				return nil, nil, fmt.Errorf("unexpected value found after column %q. Expected ',' or 'AS'", c)
+			}
+			if name == "" {
+				return nil, nil, fmt.Errorf("expected column alias name not found after AS: %q.", c)
+			}
+			n = name
+			cols[i] = col
+		}
+		if stringutil.Contains(n, names) {
+			return nil, nil, fmt.Errorf("column name %q appears more than once", n)
+		}
+		names[i] = n
+	}
+	return cols, names, nil
 }
 
 // NewSelectQuery creates a SelectQuery from the given string.
@@ -174,24 +205,29 @@ func NewSelectQuery(query string) (*SelectQuery, error) {
 		return nil, fmt.Errorf("missing FROM in query")
 	}
 
-	cols := strings.Split(strings.TrimSpace(query[:fi]), ",")
-	// trim off FROM
+	cols, names, err := parseColumnNames(strings.TrimSpace(query[:fi]))
+	if err != nil {
+		return nil, err
+	}
+
+	// trim off FROM and read table name
 	_, query = stringutil.FirstWord(query[fi:])
 	table, rest := stringutil.FirstWord(query)
 	if table == "" {
 		return nil, fmt.Errorf("no table name given")
 	}
 
+	// Check if an ORDER BY is present
 	var order *sortedResult
 	if i := strings.Index(strings.ToUpper(rest), "ORDER"); i >= 0 {
-		ob, err := newSortedResult(rest[i:])
+		order, err = newSortedResult(rest[i:])
 		if err != nil {
 			return nil, err
 		}
-		order = ob
 		rest = strings.TrimSpace(rest[:i])
 	}
 
+	// Check for a WHERE clause (Query always has a where, but can be 'empty' == ALL keys in the table)
 	where, err := whereclause.NewWhere(rest)
 	if err != nil {
 		return nil, err
@@ -199,6 +235,7 @@ func NewSelectQuery(query string) (*SelectQuery, error) {
 	return &SelectQuery{
 		TableName: table,
 		Columns:   cols,
+		Names:     names,
 		Where:     where,
 		Into:      into,
 		OrderBy:   order,

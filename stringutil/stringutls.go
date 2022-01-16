@@ -4,7 +4,11 @@ import (
 	"strings"
 )
 
-func ContainsString(s string, ss []string) int {
+func Contains(s string, ss []string) bool {
+	return IndexOf(s, ss) >= 0
+}
+
+func IndexOf(s string, ss []string) int {
 	for i, sz := range ss {
 		if sz == s {
 			return i
@@ -134,7 +138,7 @@ func firstQuoteIndex(s string) int {
 func UniqueStrings(ss []string) []string {
 	var result []string
 	for _, s := range ss {
-		if ContainsString(s, result) >= 0 {
+		if IndexOf(s, result) >= 0 {
 			continue
 		}
 		result = append(result, s)
