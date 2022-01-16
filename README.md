@@ -35,16 +35,26 @@ Supported queries are:
 * `DELETE`  
   
 #### SELECT  
-`SELECT <column name> [,<column name>...] [INTO <table name>] FROM <table name> [WHERE <colmnname>=<value|NULL>]`  
+``` 
+SELECT <column name> [,<column name>...] [INTO <table name>] FROM <table name> \    
+    [WHERE <colmnname>=<value|NULL>[, AND|OR <columnname>=<value|NULL>]] \
+    [ORDER BY <column name> [,columnname...]
+```  
 Column names should be columns in the named table.  Use wildcard `*` to select all columns  
 INTO is an optional name of a new table to insert the results into.  The table must NOT exist.  
 FROM is a required keyword followed by the name of the table to select from.  Table must exist in the current database.  
-WHERE is an optional set of filter conditions to limit the selected values.  See [Where](#WHERE)
+WHERE is an optional set of filter conditions to limit the selected values.  See [Where](#WHERE)  
+ORDER BY an optional keyword pair to sort the result by one or more columns.
 
 #### INSERT
-`INSERT INTO <table name> (<column name> [,<column name>...]) VALUES (<value|NULL>[,<value|NULL>...])`  
+```
+INSERT INTO <table name> (<column name> [,<column name>...]) VALUES (<value|NULL>[,<value|NULL>...])
+```
 or  
-`INSERT INTO <table name> (<column name> [,<column name>...]) SELECT <column name> [,<column name>...] FROM <table name> [WHERE <colmnname>=<value|NULL>]`  
+```
+INSERT INTO <table name> (<column name> [,<column name>...]) \
+    SELECT <column name> [,<column name>...] FROM <table name> [WHERE <colmnname>=<value|NULL>]
+```
 Insert has two forms, VALUES and SELECT.  VALUES inserts a single record of the given values, SELECT inserts all the results of the given SELECT query.  
 `INTO`  a required keyword followed by the table name of where to insert the new records.  
 (col[,col...]) A required, bracketed, list of column name of where to insert the new data.  must be valid columns in the table.  
@@ -57,7 +67,10 @@ SELECT query should be a valid [SELECT](#SELECT) query (Without its own INTO)
 
 
 #### UPDATE
-`UPDATE <table name> SET <colmnname>=<value|NULL> [,<colmnname>=<value|NULL>...] [WHERE <colmnname>=<value|NULL>]`  
+```
+UPDATE <table name> SET <colmnname>=<value|NULL> [,<colmnname>=<value|NULL>...] \
+    [WHERE <colmnname>=<value|NULL>]
+```
 Update changes values of an existing record.  
 `<table name>` a required name of an existing table.  
 `SET` a required keyword followed by one or more assignments.  
@@ -68,13 +81,18 @@ WHERE is an optional set of filter conditions to limit the updated values.  See 
 
 
 #### DELETE
-`DELETE FROM <table name> [WHERE <colmnname>=<value|NULL>]`  
+```
+DELETE FROM <table name> [WHERE <colmnname>=<value|NULL>]
+```
 Deletes records from the table.  
 `FROM` a required keyword, followed by the table name to delete from.  
 WHERE is an optional set of filter conditions to limit the deleted values.  See [Where](#WHERE)
 
 
 #### WHERE  
+```
+WHERE [NOT] <condition> [AND | OR [NOT] <condition>...]  
+```
 The Where clause is used to filter results in SELECT, UPDATE or DELETE.  
 Where consists of one or more 'conditions', linked using operators `AND` or `OR`.  
 Each condition begins with a column name followed by an operator, followed by the comparison value.  
